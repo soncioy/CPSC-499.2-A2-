@@ -1,7 +1,7 @@
-lexer grammar Java1_2ANTLRLexer;
+lexer grammar JavaLexer;
 
 @header {
-	package ca.ucalgary.cpsc499_02.w26;
+	//package ca.ucalgary.cpsc49902;
 }
 
 ABSTRACT						: 'abstract';

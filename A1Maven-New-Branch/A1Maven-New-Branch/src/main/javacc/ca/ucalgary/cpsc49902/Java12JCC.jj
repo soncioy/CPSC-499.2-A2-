@@ -36,14 +36,14 @@ options
   DEBUG_PARSER = false;
 }
 
-PARSER_BEGIN(Java1_2JavaCCLexer)
-package ca.ucalgary.cpsc499_02.w26;
+PARSER_BEGIN(Java12Parser)
+package ca.ucalgary.cpsc49902.javacc;
+import java.util.*;
 
-public class Java1_2JavaCCLexer
-{
+public class Java12Parser {
+
 }
-PARSER_END(Java1_2JavaCCLexer)
-
+PARSER_END(Java12Parser)
 /*
  * LINE TERMINATORS
  */
