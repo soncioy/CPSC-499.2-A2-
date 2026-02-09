@@ -1,0 +1,116 @@
+103 token(s) found in the input file(s)
+NORMAL (1,1-1,7) [category=30]: package
+SPECIAL (1,8-1,8) [category=103]:  
+NORMAL (1,9-1,13) [category=102]: Tests
+NORMAL (1,14-1,14) [category=62]: ;
+SPECIAL (1,15-1,18) [category=103]: 
+
+
+NORMAL (3,1-3,6) [category=33]: public
+SPECIAL (3,7-3,7) [category=103]:  
+NORMAL (3,8-3,12) [category=8]: class
+SPECIAL (3,13-3,13) [category=103]:  
+NORMAL (3,14-3,25) [category=102]: LiteralsTest
+SPECIAL (3,26-3,26) [category=103]:  
+NORMAL (3,27-3,27) [category=58]: {
+SPECIAL (3,28-3,33) [category=103]: 
+    
+NORMAL (4,5-4,10) [category=33]: public
+SPECIAL (4,11-4,11) [category=103]:  
+NORMAL (4,12-4,15) [category=46]: void
+SPECIAL (4,16-4,16) [category=103]:  
+NORMAL (4,17-4,20) [category=102]: test
+NORMAL (4,21-4,21) [category=56]: (
+NORMAL (4,22-4,22) [category=57]: )
+SPECIAL (4,23-4,23) [category=103]:  
+NORMAL (4,24-4,24) [category=58]: {
+SPECIAL (4,25-4,34) [category=103]: 
+        
+NORMAL (5,9-5,11) [category=25]: int
+SPECIAL (5,12-5,12) [category=103]:  
+NORMAL (5,13-5,15) [category=102]: hex
+SPECIAL (5,16-5,16) [category=103]:  
+NORMAL (5,17-5,17) [category=87]: =
+SPECIAL (5,18-5,18) [category=103]:  
+NORMAL (5,19-5,24) [category=52]: 0xCAFE
+NORMAL (5,25-5,25) [category=62]: ;
+SPECIAL (5,26-5,31) [category=103]:       
+SPECIAL (5,32-5,62) [category=104]: // Hexadecimal (starts with 0x)
+SPECIAL (5,63-5,72) [category=103]: 
+        
+NORMAL (6,9-6,11) [category=25]: int
+SPECIAL (6,12-6,12) [category=103]:  
+NORMAL (6,13-6,15) [category=102]: oct
+SPECIAL (6,16-6,16) [category=103]:  
+NORMAL (6,17-6,17) [category=87]: =
+SPECIAL (6,18-6,18) [category=103]:  
+NORMAL (6,19-6,22) [category=52]: 0372
+NORMAL (6,23-6,23) [category=62]: ;
+SPECIAL (6,24-6,31) [category=103]:         
+SPECIAL (6,32-6,55) [category=104]: // Octal (starts with 0)
+SPECIAL (6,56-6,65) [category=103]: 
+        
+NORMAL (7,9-7,12) [category=27]: long
+SPECIAL (7,13-7,13) [category=103]:  
+NORMAL (7,14-7,14) [category=102]: l
+SPECIAL (7,15-7,15) [category=103]:  
+NORMAL (7,16-7,16) [category=87]: =
+SPECIAL (7,17-7,17) [category=103]:  
+NORMAL (7,18-7,22) [category=52]: 1234L
+NORMAL (7,23-7,23) [category=62]: ;
+SPECIAL (7,24-7,31) [category=103]:         
+SPECIAL (7,32-7,46) [category=104]: // Long literal
+SPECIAL (7,47-7,56) [category=103]: 
+        
+NORMAL (8,9-8,14) [category=13]: double
+SPECIAL (8,15-8,15) [category=103]:  
+NORMAL (8,16-8,16) [category=102]: d
+SPECIAL (8,17-8,17) [category=103]:  
+NORMAL (8,18-8,18) [category=87]: =
+SPECIAL (8,19-8,19) [category=103]:  
+NORMAL (8,20-8,26) [category=53]: 1.234e2
+NORMAL (8,27-8,27) [category=62]: ;
+SPECIAL (8,28-8,31) [category=103]:     
+SPECIAL (8,32-8,62) [category=104]: // Floating point with exponent
+SPECIAL (8,63-8,72) [category=103]: 
+        
+NORMAL (9,9-9,13) [category=18]: float
+SPECIAL (9,14-9,14) [category=103]:  
+NORMAL (9,15-9,15) [category=102]: f
+SPECIAL (9,16-9,16) [category=103]:  
+NORMAL (9,17-9,17) [category=87]: =
+SPECIAL (9,18-9,18) [category=103]:  
+NORMAL (9,19-9,22) [category=53]: 1.2f
+NORMAL (9,23-9,23) [category=62]: ;
+SPECIAL (9,24-9,31) [category=103]:         
+SPECIAL (9,32-9,47) [category=104]: // Float literal
+SPECIAL (9,48-9,57) [category=103]: 
+        
+NORMAL (10,9-10,12) [category=7]: char
+SPECIAL (10,13-10,13) [category=103]:  
+NORMAL (10,14-10,14) [category=102]: c
+SPECIAL (10,15-10,15) [category=103]:  
+NORMAL (10,16-10,16) [category=87]: =
+SPECIAL (10,17-10,17) [category=103]:  
+NORMAL (10,18-10,25) [category=54]: '\u0041'
+NORMAL (10,26-10,26) [category=62]: ;
+SPECIAL (10,27-10,31) [category=103]:      
+SPECIAL (10,32-10,48) [category=104]: // Unicode escape
+SPECIAL (10,49-10,58) [category=103]: 
+        
+NORMAL (11,9-11,14) [category=102]: String
+SPECIAL (11,15-11,15) [category=103]:  
+NORMAL (11,16-11,16) [category=102]: s
+SPECIAL (11,17-11,17) [category=103]:  
+NORMAL (11,18-11,18) [category=87]: =
+SPECIAL (11,19-11,19) [category=103]:  
+NORMAL (11,20-11,35) [category=55]: "Line1\r\nLine2"
+NORMAL (11,36-11,36) [category=62]: ;
+SPECIAL (11,37-11,37) [category=103]:  
+SPECIAL (11,38-11,59) [category=104]: // String with escapes
+SPECIAL (11,60-11,65) [category=103]: 
+    
+NORMAL (12,5-12,5) [category=59]: }
+SPECIAL (12,6-12,7) [category=103]: 
+
+NORMAL (13,1-13,1) [category=59]: }
