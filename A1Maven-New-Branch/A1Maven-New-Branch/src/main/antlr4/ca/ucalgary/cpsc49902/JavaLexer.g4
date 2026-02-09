@@ -1,156 +1,124 @@
-lexer grammar JavaLexer;
+lexer grammar Java1_2ANTLRLexer;
 
 @header {
-    //package ca.ucalgary.cpsc49902;
+	package ca.ucalgary.cpsc499_02.w26;
 }
 
-// SECTION 1: KEYWORDS - 50 Reserved Keywords (alphabetical order matching JavaCC)
-ABSTRACT     : 'abstract';
-BOOLEAN      : 'boolean';
-BREAK        : 'break';
-BYTE         : 'byte';
-CASE         : 'case';
-CATCH        : 'catch';
-CHAR         : 'char';
-CLASS        : 'class';
-CONST        : 'const';
-CONTINUE     : 'continue';
-DEFAULT      : 'default';
-DO           : 'do';
-DOUBLE       : 'double';
-ELSE         : 'else';
-EXTENDS      : 'extends';
-FINAL        : 'final';
-FINALLY      : 'finally';
-FLOAT        : 'float';
-FOR          : 'for';
-GOTO         : 'goto';
-IF           : 'if';
-IMPLEMENTS   : 'implements';
-IMPORT       : 'import';
-INSTANCEOF   : 'instanceof';
-INT          : 'int';
-INTERFACE    : 'interface';
-LONG         : 'long';
-NATIVE       : 'native';
-NEW          : 'new';
-PACKAGE      : 'package';
-PRIVATE      : 'private';
-PROTECTED    : 'protected';
-PUBLIC       : 'public';
-RETURN       : 'return';
-SHORT        : 'short';
-STATIC       : 'static';
-STRICTFP     : 'strictfp';
-SUPER        : 'super';
-SWITCH       : 'switch';
-SYNCHRONIZED : 'synchronized';
-THIS         : 'this';
-THROW        : 'throw';
-THROWS       : 'throws';
-TRANSIENT    : 'transient';
-TRY          : 'try';
-VOID         : 'void';
-VOLATILE     : 'volatile';
-WHILE        : 'while';
+ABSTRACT						: 'abstract';
+BOOLEAN						: 'boolean';
+BREAK						: 'break';
+BYTE							: 'byte';
+CASE							: 'case';
+CATCH						: 'catch';
+CHAR							: 'char';
+CLASS						: 'class';
+CONTINUE						: 'continue';
+DEFAULT						: 'default';
+DO							: 'do';
+DOUBLE						: 'double';
+ELSE							: 'else';
+EXTENDS						: 'extends';
+FINAL						: 'final';
+FINALLY						: 'finally';
+FLOAT						: 'float';
+FOR							: 'for';
+IF							: 'if';
+IMPLEMENTS					: 'implements';
+IMPORT						: 'import';
+INSTANCEOF					: 'instanceof';
+INT							: 'int';
+INTERFACE					: 'interface';
+LONG							: 'long';
+NATIVE						: 'native';
+NEW							: 'new';
+PACKAGE						: 'package';
+PRIVATE						: 'private';
+PROTECTED					: 'protected';
+PUBLIC						: 'public';
+RETURN						: 'return';
+SHORT						: 'short';
+STATIC						: 'static';
+STRICTFP						: 'strictfp';
+SUPER						: 'super';
+SWITCH						: 'switch';
+SYNCHRONIZED					: 'synchronized';
+THIS							: 'this';
+THROW						: 'throw';
+THROWS						: 'throws';
+TRANSIENT					: 'transient';
+TRY							: 'try';
+VOID							: 'void';
+VOLATILE						: 'volatile';
+WHILE						: 'while';
 
-// SECTION 2: LITERALS
-TRUE  : 'true';
-FALSE : 'false';
-NULL  : 'null';
+SEMICOLON					: ';';
+COMMA						: ',';
+PERIOD						: '.';
+OPEN_PARENTHESIS				: '(';
+CLOSE_PARENTHESIS			: ')';
+OPEN_BRACE					: '{';
+CLOSE_BRACE					: '}';
+OPEN_BRACKET					: '[';
+CLOSE_BRACKET				: ']';
+COLON           				: ':';
+QUESTION        				: '?';
+EQUALS          				: '=';
+PLUS            				: '+';
+MINUS           				: '-';
+ASTERISK        				: '*';
+SLASH           				: '/';
+PERCENT         				: '%';
+DOUBLE_PLUS     				: '++';
+DOUBLE_MINUS    				: '--';
+EXCLAMATION     				: '!';
+TILDE           				: '~';
+DOUBLE_EQUALS   				: '==';
+EXCLAMATION_EQUALS			: '!=';
+LESS_THAN       				: '<';
+GREATER_THAN    				: '>';
+LESS_THAN_OR_EQUALS			: '<=';
+GREATER_THAN_OR_EQUALS		: '>=';
+DOUBLE_AMPERSAND				: '&&';
+DOUBLE_PIPE					: '||';
+AMPERSAND					: '&';
+PIPE							: '|';
+CARET						: '^';
+DOUBLE_LESS_THAN				: '<<';
+DOUBLE_GREATER_THAN			: '>>';
+TRIPLE_GREATER_THAN			: '>>>';
+PLUS_EQUALS     				: '+=';
+MINUS_EQUALS    				: '-=';
+ASTERISK_EQUALS 				: '*=';
+SLASH_EQUALS    				: '/=';
+AMPERSAND_EQUALS 			: '&=';
+PIPE_EQUALS     				: '|=';
+CARET_EQUALS    				: '^=';
+PERCENT_EQUALS  				: '%=';
+DOUBLE_LESS_THAN_EQUALS		: '<<=';
+DOUBLE_GREATER_THAN_EQUALS	: '>>=';
+TRIPLE_GREATER_THAN_EQUALS	: '>>>=';
 
-INTEGER_LITERAL
-    : '0' [xX] HexDigit+ [lL]?          // Hexadecimal
-    | '0' [0-7]+ [lL]?                  // Octal
-    | '0' [lL]?                         // Zero
-    | [1-9] Digit* [lL]?                // Decimal
-    ;
+Identifier 					: JavaLetter JavaLetterOrDigit*;
 
-FLOATING_POINT_LITERAL
-    : Digit+ '.' Digit* Exponent? [fFdD]?
-    | '.' Digit+ Exponent? [fFdD]?
-    | Digit+ Exponent [fFdD]?
-    | Digit+ [fFdD]
-    ;
+fragment JavaLetter 			: [\p{Lu}\p{Ll}\p{Lt}\p{Lo}] // Letters
+    							| [\p{Nl}]                   // Letter numbers
+    							| [\p{Sc}]                   // Currency symbols
+    							| [\p{Pc}]                   // Punctuation
+    							;
 
-CHARACTER_LITERAL
-    : '\'' (UnicodeEscape | EscapeSequence | ~['\\\r\n]) '\''
-    ;
+fragment JavaLetterOrDigit 	: JavaLetter
+			    				| [\p{Nd}]                   // Decimals
+    							| [\p{Mn}\p{Mc}]             // Marks
+    							| [\p{Cf}]                   // Format
+    							;
 
-STRING_LITERAL
-    : '"' (UnicodeEscape | EscapeSequence | ~["\\\r\n])* '"'
-    ;
+IntegerLiteral          		: [0-9]+;
+FloatingPointLiteral    		: [0-9]+ '.' [0-9]*;
+CharacterLiteral        		: '\'' (~['\\] | '\\' .) '\'';
+StringLiteral           		: '"' (~["\\] | '\\' .)* '"';
+BooleanLiteral         	 	: 'true' | 'false';
+NullLiteral             		: 'null';
 
-// SECTION 3: SEPARATORS
-LPAREN : '(';
-RPAREN : ')';
-LBRACE : '{';
-RBRACE : '}';
-LBRACK : '[';
-RBRACK : ']';
-SEMI   : ';';
-COMMA  : ',';
-DOT    : '.';
-
-// SECTION 4: OPERATORS (Prioritized by length and symbol uniqueness)
-URSHIFT_ASSIGN : '>>>=';
-URSHIFT        : '>>>';
-RSHIFT_ASSIGN  : '>>=';
-LSHIFT_ASSIGN  : '<<=';
-LSHIFT         : '<<';
-RSHIFT         : '>>';
-EQUAL          : '==';
-LE             : '<=';
-GE             : '>=';
-NOTEQUAL       : '!=';
-AND            : '&&';
-OR             : '||';
-INC            : '++';
-DEC            : '--';
-ADD_ASSIGN     : '+=';
-SUB_ASSIGN     : '-=';
-MUL_ASSIGN     : '*=';
-DIV_ASSIGN     : '/=';
-AND_ASSIGN     : '&=';
-OR_ASSIGN      : '|=';
-XOR_ASSIGN     : '^=';
-MOD_ASSIGN     : '%=';
-ASSIGN         : '=';
-GT             : '>';
-LT             : '<';
-BANG           : '!';
-TILDE          : '~';
-QUESTION       : '?';
-COLON          : ':';
-ADD            : '+';
-SUB            : '-';
-MUL            : '*';
-DIV            : '/';
-BITAND         : '&';
-BITOR          : '|';
-CARET          : '^';
-MOD            : '%';
-
-// SECTION 5: IDENTIFIER
-IDENTIFIER : [a-zA-Z_$] [a-zA-Z0-9_$]*;
-
-// SECTION 6: WHITESPACE AND COMMENTS
-WS : [ \t\r\n\f\u001A]+ -> channel(HIDDEN);
-
-SINGLE_LINE_COMMENT : '//' ~[\r\n]* -> channel(HIDDEN);
-
-FORMAL_COMMENT : '/**' .*? '*/' -> channel(HIDDEN);
-
-MULTI_LINE_COMMENT : '/*' .*? '*/' -> channel(HIDDEN);
-
-// SECTION 7: FRAGMENTS
-fragment Digit      : [0-9];
-fragment HexDigit   : [0-9a-fA-F];
-fragment Exponent   : [eE] [+-]? Digit+;
-fragment UnicodeEscape : '\\' 'u' HexDigit HexDigit HexDigit HexDigit;
-fragment EscapeSequence
-    : '\\' [btnfr"'\\]
-    | '\\' [0-3] [0-7] [0-7]
-    | '\\' [0-7] [0-7]
-    | '\\' [0-7]
-    ;
+WHITESPACE         			: [ \t\r\n\f]+ -> skip;
+LINE_COMMENT    				: '//' ~[\r\n]* -> skip;
+COMMENT         				: '/*' .*? '*/' -> skip;

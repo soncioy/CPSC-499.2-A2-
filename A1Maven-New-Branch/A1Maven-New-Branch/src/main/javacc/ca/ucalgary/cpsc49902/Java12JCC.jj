@@ -1,133 +1,374 @@
-options {
-  STATIC = false;
+/*
+ * This annotated grammar is a heavily modified form of the one produced by
+ * Sreenivasa Viswanadha (simplified and enhanced for 1.5) found in the
+ * JavaCC grammar repository.  The original copyright notice follows.
+ */
+/*
+ * Copyright Â© 2002 Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * California 95054, U.S.A. All rights reserved.  Sun Microsystems, Inc. has
+ * intellectual property rights relating to technology embodied in the product
+ * that is described in this document. In particular, and without limitation,
+ * these intellectual property rights may include one or more of the U.S.
+ * patents listed at http://www.sun.com/patents and one or more additional
+ * patents or pending patent applications in the U.S. and in other countries.
+ * U.S. Government Rights - Commercial software. Government users are subject
+ * to the Sun Microsystems, Inc. standard license agreement and applicable
+ * provisions of the FAR and its supplements.  Use is subject to license terms.
+ * Sun,  Sun Microsystems,  the Sun logo and  Java are trademarks or registered
+ * trademarks of Sun Microsystems, Inc. in the U.S. and other countries.  This
+ * product is covered and controlled by U.S. Export Control laws and may be
+ * subject to the export or import laws in other countries.  Nuclear, missile,
+ * chemical biological weapons or nuclear maritime end uses or end users,
+ * whether direct or indirect, are strictly prohibited.  Export or reexport
+ * to countries subject to U.S. embargo or to entities identified on U.S.
+ * export exclusion lists, including, but not limited to, the denied persons
+ * and specially designated nationals lists is strictly prohibited.
+ */
+options
+{
+  BUILD_TOKEN_MANAGER = true;
+  JAVA_UNICODE_ESCAPE = false;
   UNICODE_INPUT = true;
-  JAVA_UNICODE_ESCAPE = true;
+  ERROR_REPORTING = false;
+  COMMON_TOKEN_ACTION = false;
+  STATIC = false;
+  DEBUG_TOKEN_MANAGER = false;
+  DEBUG_PARSER = false;
 }
 
-PARSER_BEGIN(Java12Parser)
-package ca.ucalgary.cpsc49902.javacc;
-import java.util.*;
+PARSER_BEGIN(Java1_2JavaCCLexer)
+package ca.ucalgary.cpsc499_02.w26;
 
-public class Java12Parser {
-
+public class Java1_2JavaCCLexer
+{
 }
-PARSER_END(Java12Parser)
+PARSER_END(Java1_2JavaCCLexer)
 
-/* 1. SPECIAL TOKENS */
-SPECIAL_TOKEN : {
-  < WS: ( " " | "\t" | "\n" | "\r" | "\f" | "\u001A" )+ >
-| < SINGLE_LINE_COMMENT: "//" (~["\n","\r"])* >
-| < MULTI_LINE_COMMENT: "/*" (~["*"])* "*" ("*" | (~["*","/"] (~["*"])* "*"))* "/" >
-| < FORMAL_COMMENT: "/**" (~["*"])* "*" ("*" | (~["*","/"] (~["*"])* "*"))* "/" >
-}
-
-/* 2. KEYWORDS - 50 Reserved Keywords per */
-TOKEN : {
-  < ABSTRACT: "abstract" > | < BOOLEAN: "boolean" > | < BREAK: "break" >
-| < BYTE: "byte" > | < CASE: "case" > | < CATCH: "catch" >
-| < CHAR: "char" > | < CLASS: "class" > | < CONST: "const" >
-| < CONTINUE: "continue" > | < _DEFAULT: "default" > | < DO: "do" >
-| < DOUBLE: "double" > | < ELSE: "else" > | < EXTENDS: "extends" >
-| < FINAL: "final" > | < FINALLY: "finally" > | < FLOAT: "float" >
-| < FOR: "for" > | < GOTO: "goto" > | < IF: "if" >
-| < IMPLEMENTS: "implements" > | < IMPORT: "import" > | < INSTANCEOF: "instanceof" >
-| < INT: "int" > | < INTERFACE: "interface" > | < LONG: "long" >
-| < NATIVE: "native" > | < NEW: "new" > | < PACKAGE: "package" >
-| < PRIVATE: "private" > | < PROTECTED: "protected" > | < PUBLIC: "public" >
-| < RETURN: "return" > | < SHORT: "short" > | < STATIC: "static" >
-| < STRICTFP: "strictfp" > | < SUPER: "super" > | < SWITCH: "switch" >
-| < SYNCHRONIZED: "synchronized" > | < THIS: "this" > | < THROW: "throw" >
-| < THROWS: "throws" > | < TRANSIENT: "transient" > | < TRY: "try" >
-| < VOID: "void" > | < VOLATILE: "volatile" > | < WHILE: "while" >
+/*
+ * LINE TERMINATORS
+ */
+SPECIAL_TOKEN :
+{
+  "\n"
+| "\r"
 }
 
-/* 3. LITERALS - true, false, and null are Literals, not Keywords  */
-TOKEN : {
-  < TRUE: "true" >
-| < FALSE: "false" >
-| < NULL: "null" >
-| < INTEGER_LITERAL:
-      <DECIMAL_NUMERAL> (["l","L"])?
-    | <HEX_NUMERAL> (["l","L"])?
-    | <OCTAL_NUMERAL> (["l","L"])?
+/*
+ * WHITE SPACE
+ */
+SPECIAL_TOKEN :
+{
+  " "
+| "\t"
+| "\f"
+}
+
+/*
+ * COMMENTS
+ */
+MORE :
+{
+  "//" : IN_SINGLE_LINE_COMMENT
+| < "/**" ~[ "/" ] >
+  {
+    input_stream.backup(1);
+  }
+  : IN_FORMAL_COMMENT
+| "/*" : IN_MULTI_LINE_COMMENT
+}
+
+< IN_SINGLE_LINE_COMMENT >
+SPECIAL_TOKEN :
+{
+  < SINGLE_LINE_COMMENT :
+    "\n"
+  | "\r"
+  | "\r\n" > : DEFAULT
+}
+
+< IN_MULTI_LINE_COMMENT >
+SPECIAL_TOKEN :
+{
+  < MULTI_LINE_COMMENT : "*/" > : DEFAULT
+}
+
+< IN_FORMAL_COMMENT >
+SPECIAL_TOKEN :
+{
+  < FORMAL_COMMENT : "*/" > : DEFAULT
+}
+
+< IN_SINGLE_LINE_COMMENT, IN_FORMAL_COMMENT, IN_MULTI_LINE_COMMENT >
+MORE :
+{
+  < ~[ ] >
+}
+
+/*
+ * LITERALS
+ */
+
+/*
+ * INTEGER LITERALS
+ */
+TOKEN :
+{
+  < INTEGER_LITERAL :
+    < DECIMAL_INTEGER_LITERAL >
+  | < HEX_INTEGER_LITERAL >
+  | < OCTAL_INTEGER_LITERAL > >
+| < #DECIMAL_INTEGER_LITERAL : [ "1"-"9" ] ([ "0"-"9" ])* ([ "l", "L" ])? >
+| < #HEX_INTEGER_LITERAL : "0" [ "x", "X" ] ([ "0"-"9", "a"-"f", "A"-"F" ])+ ([ "l", "L" ])? >
+| < #OCTAL_INTEGER_LITERAL : "0" ([ "0"-"7" ])* ([ "l", "L" ])? >
+}
+
+/*
+ * FLOATING-POINT LITERALS
+ */
+
+TOKEN :
+{
+  < FLOATING_POINT_LITERAL :
+    ([ "0"-"9" ])+ "." ([ "0"-"9" ])* (< EXPONENT_PART >)? ([ "f", "F", "d", "D" ])?
+  | "." ([ "0"-"9" ])+ (< EXPONENT_PART >)? ([ "f", "F", "d", "D" ])?
+  | ([ "0"-"9" ])+ < EXPONENT_PART > ([ "f", "F", "d", "D" ])?
+  | ([ "0"-"9" ])+ (< EXPONENT_PART >)? [ "f", "F", "d", "D" ] >
+| < #EXPONENT_PART : [ "e", "E" ] ([ "+", "-" ])? ([ "0"-"9" ])+ >
+}
+
+/*
+ * BOOLEAN LITERALS
+ */
+
+TOKEN :
+{
+  < FALSE : "false" >
+|
+  < TRUE : "true" >
+}
+
+/*
+ * CHARACTER LITERALS
+ */
+
+TOKEN :
+{
+  < CHARACTER_LITERAL :
+    "'"
+    (
+      (~[ "'", "\\", "\n", "\r" ])
+    |
+      (
+        "\\"
+        (
+          [ "n", "t", "b", "r", "f", "\\", "'", "\"" ]
+        | [ "0"-"7" ] ([ "0"-"7" ])?
+        | [ "0"-"3" ] [ "0"-"7" ] [ "0"-"7" ]
+        | ("u")+ [ "0"-"9", "a"-"f", "A"-"F" ] [ "0"-"9", "a"-"f", "A"-"F" ] [ "0"-"9", "a"-"f", "A"-"F" ] [ "0"-"9", "a"-"f", "A"-"F" ]
+        )
+      )
+    )
+    "'" >
+}
+
+/*
+ * STRING LITERALS
+ */
+
+TOKEN :
+{
+  < STRING_LITERAL :
+    "\""
+    (
+      (~[ "\"", "\\", "\n", "\r" ])
+    |
+      (
+        "\\"
+        (
+          [ "n", "t", "b", "r", "f", "\\", "'", "\"" ]
+        | [ "0"-"7" ] ([ "0"-"7" ])?
+        | [ "0"-"3" ] [ "0"-"7" ] [ "0"-"7" ]
+        | ("u")+ [ "0"-"9", "a"-"f", "A"-"F" ] [ "0"-"9", "a"-"f", "A"-"F" ] [ "0"-"9", "a"-"f", "A"-"F" ] [ "0"-"9", "a"-"f", "A"-"F" ]
+        )
+      )
+    )*
+    "\"" >
+}
+
+/*
+ * NULL LITERALS
+ */
+
+TOKEN :
+{
+  < NULL : "null" >
+}
+
+/*
+ * SEPARATORS
+ */
+
+TOKEN :
+{
+  < LPAREN : "(" >
+| < RPAREN : ")" >
+| < LBRACE : "{" >
+| < RBRACE : "}" >
+| < LBRACKET : "[" >
+| < RBRACKET : "]" >
+| < SEMICOLON : ";" >
+| < COMMA : "," >
+| < DOT : "." >
+}
+
+/*
+ * OPERATORS
+ */
+
+TOKEN :
+{
+  < ASSIGN : "=" >
+| < LT : "<" >
+| < BANG : "!" >
+| < TILDE : "~" >
+| < HOOK : "?" >
+| < COLON : ":" >
+| < EQ : "==" >
+| < LE : "<=" >
+| < GE : ">=" >
+| < NE : "!=" >
+| < SC_OR : "||" >
+| < SC_AND : "&&" >
+| < INCR : "++" >
+| < DECR : "--" >
+| < PLUS : "+" >
+| < MINUS : "-" >
+| < STAR : "*" >
+| < SLASH : "/" >
+| < BIT_AND : "&" >
+| < BIT_OR : "|" >
+| < XOR : "^" >
+| < REM : "%" >
+| < LSHIFT : "<<" >
+| < PLUSASSIGN : "+=" >
+| < MINUSASSIGN : "-=" >
+| < STARASSIGN : "*=" >
+| < SLASHASSIGN : "/=" >
+| < ANDASSIGN : "&=" >
+| < ORASSIGN : "|=" >
+| < XORASSIGN : "^=" >
+| < REMASSIGN : "%=" >
+| < LSHIFTASSIGN : "<<=" >
+| < RSIGNEDSHIFTASSIGN : ">>=" >
+| < RUNSIGNEDSHIFTASSIGN : ">>>=" >
+| < RUNSIGNEDSHIFT : ">>>" >
+| < RSIGNEDSHIFT : ">>" >
+| < GT : ">" >
+}
+
+/*
+ * KEYWORDS
+ *
+ * The keywords must come after all other identifier-like tokens but before identifiers.
+ */
+
+TOKEN :
+{
+  < ABSTRACT : "abstract" >
+| < BOOLEAN : "boolean" >
+| < BREAK : "break" >
+| < BYTE : "byte" >
+| < CASE : "case" >
+| < CATCH : "catch" >
+| < CHAR : "char" >
+| < CLASS : "class" >
+| < CONST : "const" >
+| < CONTINUE : "continue" >
+| < _DEFAULT : "default" >
+| < DO : "do" >
+| < DOUBLE : "double" >
+| < ELSE : "else" >
+| < EXTENDS : "extends" >
+| < FINAL : "final" >
+| < FINALLY : "finally" >
+| < FLOAT : "float" >
+| < FOR : "for" >
+| < GOTO : "goto" >
+| < IF : "if" >
+| < IMPLEMENTS : "implements" >
+| < IMPORT : "import" >
+| < INSTANCEOF : "instanceof" >
+| < INT : "int" >
+| < INTERFACE : "interface" >
+| < LONG : "long" >
+| < NATIVE : "native" >
+| < NEW : "new" >
+| < PACKAGE : "package" >
+| < PRIVATE : "private" >
+| < PROTECTED : "protected" >
+| < PUBLIC : "public" >
+| < RETURN : "return" >
+| < SHORT : "short" >
+| < STATIC : "static" >
+| < SUPER : "super" >
+| < SWITCH : "switch" >
+| < SYNCHRONIZED : "synchronized" >
+| < THIS : "this" >
+| < THROW : "throw" >
+| < THROWS : "throws" >
+| < TRANSIENT : "transient" >
+| < TRY : "try" >
+| < VOID : "void" >
+| < VOLATILE : "volatile" >
+| < WHILE : "while" >
+| < STRICTFP : "strictfp" >
+}
+
+
+/*
+ * IDENTIFIERS
+ */
+
+TOKEN :
+{
+  < IDENTIFIER :
+    < LETTER >
+    (
+      < LETTER >
+    | < DIGIT >
+    )* >
+| < #LETTER : [ "$",
+    "A"-"Z",
+    "_",
+    "a"-"z",
+    "\u00c0"-"\u00d6",
+    "\u00d8"-"\u00f6",
+    "\u00f8"-"\u00ff",
+    "\u0100"-"\u1fff",
+    "\u3040"-"\u318f",
+    "\u3300"-"\u337f",
+    "\u3400"-"\u3d2d",
+    "\u4e00"-"\u9fff",
+    "\uf900"-"\ufaff"
+    ]
   >
-| < FLOATING_POINT_LITERAL:
-      (<DIGIT>)+ "." (<DIGIT>)* (<EXPONENT>)? (["f","F","d","D"])?
-    | "." (<DIGIT>)+ (<EXPONENT>)? (["f","F","d","D"])?
-    | (<DIGIT>)+ <EXPONENT> (["f","F","d","D"])?
-    | (<DIGIT>)+ (["f","F","d","D"])
-  >
-| < CHARACTER_LITERAL: "'" ( <ESCAPE_SEQUENCE> | ~["'","\\","\r","\n"] ) "'" >
-| < STRING_LITERAL: "\"" ( <ESCAPE_SEQUENCE> | ~["\"","\\","\r","\n"] )* "\"" >
-}
-
-/* 4. FRAGMENTS (Private Regular Expressions) */
-TOKEN : {
-  < #DIGIT: ["0"-"9"] >
-| < #LETTER: ["a"-"z","A"-"Z","_","$"] >
-| < #HEX_DIGIT: ["0"-"9","a"-"f","A"-"F"] >
-| < #OCTAL_DIGIT: ["0"-"7"] >
-| < #DECIMAL_NUMERAL: "0" | ["1"-"9"] (<DIGIT>)* >
-| < #HEX_NUMERAL: "0" ["x","X"] (<HEX_DIGIT>)+ >
-| < #OCTAL_NUMERAL: "0" (<OCTAL_DIGIT>)+ >
-| < #EXPONENT: ["e","E"] (["+","-"])? (<DIGIT>)+ >
-| < #UNICODE_ESCAPE: "\\" "u" (<HEX_DIGIT>){4} >
-| < #ESCAPE_SEQUENCE:
-      "\\" ( ["b","t","n","f","r","\"","'","\\"]
-           | ["0"-"3"] <OCTAL_DIGIT> <OCTAL_DIGIT>
-           | <OCTAL_DIGIT> (<OCTAL_DIGIT>)?
-           )
-  >
-}
-
-/* 5. SEPARATORS */
-TOKEN : {
-  < LPAREN: "(" > | < RPAREN: ")" > | < LBRACE: "{" > | < RBRACE: "}" >
-| < LBRACK: "[" > | < RBRACK: "]" > | < SEMI: ";" > | < COMMA: "," > | < DOT: "." >
-}
-
-/* 6. OPERATORS - Ordered for Maximal Munch [JLS 3.12] */
-TOKEN : {
-  < RUNSIGNEDSHIFTASSIGN: ">>>=" >
-| < RSIGNEDSHIFTASSIGN: ">>=" >
-| < LSHIFTASSIGN: "<<=" >
-| < RUNSIGNEDSHIFT: ">>>" >
-| < RSIGNEDSHIFT: ">>" >
-| < LSHIFT: "<<" >
-| < GE: ">=" >
-| < LE: "<=" >
-| < EQ: "==" >
-| < NE: "!=" >
-| < SC_OR: "||" >
-| < SC_AND: "&&" >
-| < INCR: "++" >
-| < DECR: "--" >
-| < PLUSASSIGN: "+=" >
-| < MINUSASSIGN: "-=" >
-| < STARASSIGN: "*=" >
-| < SLASHASSIGN: "/=" >
-| < ANDASSIGN: "&=" >
-| < ORASSIGN: "|=" >
-| < XORASSIGN: "^=" >
-| < REMASSIGN: "%=" >
-| < ASSIGN: "=" >
-| < GT: ">" >
-| < LT: "<" >
-| < BANG: "!" >
-| < TILDE: "~" >
-| < HOOK: "?" >
-| < COLON: ":" >
-| < PLUS: "+" >
-| < MINUS: "-" >
-| < STAR: "*" >
-| < SLASH: "/" >
-| < BIT_AND: "&" >
-| < BIT_OR: "|" >
-| < XOR: "^" >
-| < REM: "%" >
-}
-
-/* 7. IDENTIFIERS - Defined last to avoid shadowing keywords [6] */
-TOKEN : {
-  < IDENTIFIER: (<LETTER>|<UNICODE_ESCAPE>) (<LETTER>|<DIGIT>|<UNICODE_ESCAPE>)* >
+|
+  < #DIGIT :
+    [
+    "0"-"9",
+    "\u0660"-"\u0669",
+    "\u06f0"-"\u06f9",
+    "\u0966"-"\u096f",
+    "\u09e6"-"\u09ef",
+    "\u0a66"-"\u0a6f",
+    "\u0ae6"-"\u0aef",
+    "\u0b66"-"\u0b6f",
+    "\u0be7"-"\u0bef",
+    "\u0c66"-"\u0c6f",
+    "\u0ce6"-"\u0cef",
+    "\u0d66"-"\u0d6f",
+    "\u0e50"-"\u0e59",
+    "\u0ed0"-"\u0ed9",
+    "\u1040"-"\u1049"
+    ] >
 }
