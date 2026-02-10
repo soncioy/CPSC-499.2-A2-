@@ -18,9 +18,9 @@ typeDeclaration
     | SEMICOLON
     ;
 
-// ============================================================================
-// CLASS DECLARATIONS
-// ============================================================================
+ ============================================================================
+ CLASS DECLARATIONS
+ ============================================================================
 
 classDeclaration
     : modifier* CLASS Identifier (EXTENDS qualifiedIdentifier)?
@@ -44,41 +44,19 @@ memberDeclaration
     | interfaceDeclaration
     ;
 
-methodDeclaration
-    : type methodDeclarator (THROWS qualifiedIdentifierList)? methodBody
-    | VOID methodDeclarator (THROWS qualifiedIdentifierList)? methodBody
-    ;
 
-methodDeclarator
-    : Identifier OPEN_PARENTHESIS formalParameterList? CLOSE_PARENTHESIS
-      bracketsOpt
-    ;
+FormalParame
 
-methodBody
-    : block
-    | SEMICOLON
-    ;
 
-fieldDeclaration
-    : type variableDeclarators SEMICOLON
-    ;
 
 variableDeclarators
     : variableDeclarator (COMMA variableDeclarator)*
     ;
 
-variableDeclarator
-    : Identifier bracketsOpt (EQUALS variableInitializer)?
-    ;
 
-variableInitializer
-    : expression
-    | arrayInitializer
-    ;
-
-// ============================================================================
-// INTERFACE DECLARATIONS
-// ============================================================================
+ ============================================================================
+ INTERFACE DECLARATIONS
+ ============================================================================
 
 interfaceDeclaration
     : modifier* INTERFACE Identifier (EXTENDS qualifiedIdentifierList)?
@@ -101,35 +79,18 @@ interfaceMemberDeclaration
     | interfaceDeclaration
     ;
 
-interfaceMethodDeclaration
-    : type interfaceMethodDeclarator (THROWS qualifiedIdentifierList)? SEMICOLON
-    | VOID interfaceMethodDeclarator (THROWS qualifiedIdentifierList)? SEMICOLON
-    ;
 
-interfaceMethodDeclarator
-    : Identifier OPEN_PARENTHESIS formalParameterList? CLOSE_PARENTHESIS
-      bracketsOpt
-    ;
-
-interfaceFieldDeclaration
-    : type variableDeclarators SEMICOLON
-    ;
-
-// ============================================================================
-// FORMAL PARAMETERS
-// ============================================================================
-
-formalParameterList
-    : formalParameter (COMMA formalParameter)*
-    ;
+ ============================================================================
+ FORMAL PARAMETERS
+ ============================================================================
 
 formalParameter
     : FINAL? type Identifier bracketsOpt
     ;
 
-// ============================================================================
-// MODIFIERS
-// ============================================================================
+ ============================================================================
+ MODIFIERS
+ ============================================================================
 
 modifier
     : PUBLIC
@@ -145,9 +106,9 @@ modifier
     | STRICTFP
     ;
 
-// ============================================================================
-// TYPES
-// ============================================================================
+ ============================================================================
+ TYPES
+ ============================================================================
 
 type
     : qualifiedIdentifier bracketsOpt
@@ -177,9 +138,9 @@ bracketsOpt
     : (OPEN_BRACKET CLOSE_BRACKET)*
     ;
 
-// ============================================================================
-// STATEMENTS
-// ============================================================================
+ ============================================================================
+ STATEMENTS
+ ============================================================================
 
 block
     : OPEN_BRACE blockStatement* CLOSE_BRACE
@@ -191,46 +152,6 @@ blockStatement
     | classDeclaration
     ;
 
-localVariableDeclaration
-    : FINAL? type variableDeclarators
-    ;
-
-statement
-    : block
-    | ifStatement
-    | whileStatement
-    | doStatement
-    | forStatement
-    | switchStatement
-    | synchronizedStatement
-    | tryStatement
-    | throwStatement
-    | breakStatement
-    | continueStatement
-    | returnStatement
-    | labeledStatement
-    | expressionStatement
-    | emptyStatement
-    ;
-
-ifStatement
-    : IF OPEN_PARENTHESIS expression CLOSE_PARENTHESIS statement
-      (ELSE statement)?
-    ;
-
-whileStatement
-    : WHILE OPEN_PARENTHESIS expression CLOSE_PARENTHESIS statement
-    ;
-
-doStatement
-    : DO statement WHILE OPEN_PARENTHESIS expression CLOSE_PARENTHESIS SEMICOLON
-    ;
-
-forStatement
-    : FOR OPEN_PARENTHESIS forInit? SEMICOLON expression? SEMICOLON
-      forUpdate? CLOSE_PARENTHESIS statement
-    ;
-
 forInit
     : localVariableDeclaration
     | expressionList
@@ -240,14 +161,6 @@ forUpdate
     : expressionList
     ;
 
-expressionList
-    : expression (COMMA expression)*
-    ;
-
-switchStatement
-    : SWITCH OPEN_PARENTHESIS expression CLOSE_PARENTHESIS OPEN_BRACE
-      switchBlockStatementGroup* switchLabel* CLOSE_BRACE
-    ;
 
 switchBlockStatementGroup
     : switchLabel+ blockStatement*
@@ -262,49 +175,14 @@ synchronizedStatement
     : SYNCHRONIZED OPEN_PARENTHESIS expression CLOSE_PARENTHESIS block
     ;
 
-tryStatement
-    : TRY block (catchClause+ finallyBlock? | finallyBlock)
-    ;
 
 catchClause
     : CATCH OPEN_PARENTHESIS formalParameter CLOSE_PARENTHESIS block
     ;
 
-finallyBlock
-    : FINALLY block
-    ;
-
-throwStatement
-    : THROW expression SEMICOLON
-    ;
-
-breakStatement
-    : BREAK Identifier? SEMICOLON
-    ;
-
-continueStatement
-    : CONTINUE Identifier? SEMICOLON
-    ;
-
-returnStatement
-    : RETURN expression? SEMICOLON
-    ;
-
-labeledStatement
-    : Identifier COLON statement
-    ;
-
-expressionStatement
-    : statementExpression SEMICOLON
-    ;
-
-emptyStatement
-    : SEMICOLON
-    ;
-
-// ============================================================================
-// EXPRESSIONS
-// ============================================================================
+ ============================================================================
+ EXPRESSIONS
+ ============================================================================
 
 expression
     : expression1 (assignmentOperator expression1)?
@@ -392,16 +270,6 @@ postfixOp
     | DOUBLE_MINUS
     ;
 
-primary
-    : OPEN_PARENTHESIS expression CLOSE_PARENTHESIS
-    | THIS argumentsOpt
-    | SUPER superSuffix
-    | literal
-    | NEW creator
-    | qualifiedIdentifier (identifierSuffix)?
-    | basicType bracketsOpt PERIOD CLASS
-    | VOID PERIOD CLASS
-    ;
 
 identifierSuffix
     : OPEN_BRACKET (CLOSE_BRACKET bracketsOpt PERIOD CLASS
@@ -421,10 +289,6 @@ selector
     | OPEN_BRACKET expression CLOSE_BRACKET
     ;
 
-superSuffix
-    : arguments
-    | PERIOD Identifier argumentsOpt
-    ;
 
 argumentsOpt
     : (arguments)?
