@@ -70,8 +70,8 @@ public class AnalysisTool {
         try {
             String content = Files.readString(Paths.get(path));
 
-            ca.ucalgary.cpsc49902.javacc.JavaCharStream jcs =
-                    new ca.ucalgary.cpsc49902.javacc.JavaCharStream(new java.io.StringReader(content));
+            ca.ucalgary.cpsc49902.javacc.SimpleCharStream jcs =
+                    new ca.ucalgary.cpsc49902.javacc.SimpleCharStream(new java.io.StringReader(content));
 
             ca.ucalgary.cpsc49902.javacc.Java12ParserTokenManager tokenManager =
                     new ca.ucalgary.cpsc49902.javacc.Java12ParserTokenManager(jcs);
