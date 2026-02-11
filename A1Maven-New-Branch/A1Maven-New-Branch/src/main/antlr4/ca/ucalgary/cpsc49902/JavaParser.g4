@@ -216,11 +216,11 @@ expression1
     ;
 
 expression1Rest
-    : QUESTION expression COLON expression1
+    : (QUESTION expression COLON expression1)?
     ;
 
 expression2
-    : expression3 (expression2Rest)*
+    : expression3 (expression2Rest)?
     ;
 
 expression2Rest
@@ -294,7 +294,7 @@ identifierSuffix
     ;
 
 selector
-    : PERIOD Identifier argumentsOpt
+    : PERIOD Identifier arguments?
     | PERIOD THIS
     | PERIOD SUPER superSuffix
     | PERIOD NEW innerCreator
@@ -303,8 +303,7 @@ selector
 
 superSuffix
     : arguments
-    | PERIOD Identifier
-    | PERIOD Identifier arguments
+    | PERIOD Identifier arguments?
     ;
 
 argumentsOpt
@@ -324,7 +323,7 @@ innerCreator
     ;
 
 arrayCreatorRest
-    : OPEN_BRACKET (CLOSE_BRACKET bracketsOpt arrayInitializer
+    : OPEN_BRACKET ( CLOSE_BRACKET bracketsOpt arrayInitializer
                    | expression CLOSE_BRACKET (OPEN_BRACKET
                      (expression)? CLOSE_BRACKET)* bracketsOpt)
     ;
@@ -389,8 +388,8 @@ statement
     | SYNCHRONIZED parExpression block
     | RETURN expression? SEMICOLON
     | THROW expression SEMICOLON
-    | BREAK Identifier? SEMICOLON
-    | CONTINUE Identifier? SEMICOLON
+    | BREAK Identifier?
+    | CONTINUE Identifier?
     | SEMICOLON
     | expressionStatement
     | Identifier COLON statement
@@ -438,7 +437,7 @@ variableDeclaratorRest
     : backetsOpt (EQUALS variableInitializer)?
     ;
 
-constantDeclaratorsRest
+constantDeclaratorRest
     : bracketsOpt EQUALS variableInitializer
     ;
 
@@ -530,4 +529,18 @@ formalParameters
     : OPEN_PARENTHESIS formalParameter (COMMA formalParameter)* CLOSE_PARANTHESIS
     ;
 
+identifier:
+    Idntifier
+
+variableDeclaratorsRest
+    :VariableDeclaratorRest (COMMA variableDeclarator)*
+
+constantDeclaratorsRest
+    : constantDeclaratorRest (COMMA constantDeclarator)*
+
+variableDeclarator
+    : identifier variableDeclaratorRest
+
+constantDeclarator
+    : identifier constantDeclaratorRest
 
