@@ -1,107 +1,54 @@
 package ca.ucalgary.cpsc49902;
 
 import org.antlr.v4.runtime.*;
-import java.io.*;
-import java.nio.file.*;
+import org.antlr.v4.runtime.tree.*;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AnalysisTool {
 
+    // Store ALL findings from ALL files here
+    private static final List<Invocation> allInvocations = new ArrayList<>();
+
     public static void main(String[] args) {
+        // 1. SILENTLY Parse every file provided in args
         for (String path : args) {
-            System.out.println("ANALYZING: " + path);
-            System.out.println(runAntlrOnFile(path));
-            System.out.println(runJavaCCOnFile(path));
+            analyzeWithAntlr(path);
+            // analyzeWithJavaCC(path); // Uncomment when Pavit is ready
+        }
+
+        // 2. PRINT THE SUMMARY HEADER
+        // Format: <#> method/constructor invocation(s) found in the input file(s)
+        System.out.println(allInvocations.size() + " method/constructor invocation(s) found in the input file(s)");
+
+        // 3. PRINT THE DETAILS
+        for (Invocation invocation : allInvocations) {
+            System.out.println(invocation.toString());
         }
     }
 
-    public static String getAntlrOutput(String path) {
-        return runAntlrOnFile(path);
-    }
-
-    public static String getJavaCCOutput(String path) {
-        return runJavaCCOnFile(path);
-    }
-
-    public static String runAntlrOnFile(String path) {
+    private static void analyzeWithAntlr(String path) {
         try {
             JavaLexer lexer = new JavaLexer(CharStreams.fromPath(Paths.get(path)));
+            // Remove console error listeners to keep output clean if there are syntax errors
             lexer.removeErrorListeners();
-            lexer.addErrorListener(new BaseErrorListener() {
-                @Override
-                public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol,
-                                        int line, int charPositionInLine,
-                                        String msg, RecognitionException e) {
-                    throw new RuntimeException("Lexical error at line " + line +
-                            ", column " + (charPositionInLine + 1) + ": " + msg);
-                }
-            });
 
             CommonTokenStream tokens = new CommonTokenStream(lexer);
-            tokens.fill();
+            JavaParser parser = new JavaParser(tokens);
+            parser.removeErrorListeners();
 
-            int total = 0;
-            StringBuilder tokenDetails = new StringBuilder();
-            for (org.antlr.v4.runtime.Token t : tokens.getTokens()) {
-                if (t.getType() == org.antlr.v4.runtime.Token.EOF) continue;
-                total++;
+            ParseTree tree = parser.compilationUnit();
 
-                String type = (t.getChannel() == Lexer.DEFAULT_TOKEN_CHANNEL) ? "NORMAL" : "SPECIAL";
-                String image = t.getText();
-
-                int startCol = t.getCharPositionInLine() + 1;
-                int endLine = t.getLine();
-                int endCol = startCol + image.length() - 1;
-
-                tokenDetails.append(String.format("%s (%d,%d-%d,%d) [category=%d]: %s\n",
-                        type, t.getLine(), startCol, endLine, endCol, t.getType(), image));
-            }
-
-            // Warning fix: Inline the finalResult variable
-            return total + " token(s) found in the input file(s)\n" + tokenDetails;
+            // Pass the global list to the listener so it can add findings directly
+            MethodFinderListener finder = new MethodFinderListener(path, allInvocations);
+            ParseTreeWalker walker = new ParseTreeWalker();
+            walker.walk(finder, tree);
 
         } catch (IOException e) {
-            throw new RuntimeException("Error reading file: " + e.getMessage());
+            // Keep errors explicitly separate from standard output
+            System.err.println("Error reading file: " + path);
         }
     }
-
-    public static String runJavaCCOnFile(String path) {
-        int total = 0;
-        StringBuilder outputBuilder = new StringBuilder(); // Rename 'output' to avoid warnings
-        try {
-            String content = Files.readString(Paths.get(path));
-
-            ca.ucalgary.cpsc49902.javacc.SimpleCharStream jcs =
-                    new ca.ucalgary.cpsc49902.javacc.SimpleCharStream(new java.io.StringReader(content));
-
-            ca.ucalgary.cpsc49902.javacc.Java12ParserTokenManager tokenManager =
-                    new ca.ucalgary.cpsc49902.javacc.Java12ParserTokenManager(jcs);
-
-            while (true) {
-                ca.ucalgary.cpsc49902.javacc.Token t = tokenManager.getNextToken();
-
-                if (t.specialToken != null) {
-                    ca.ucalgary.cpsc49902.javacc.Token special = t.specialToken;
-                    while (special.specialToken != null) special = special.specialToken;
-                    while (special != null) {
-                        outputBuilder.append(String.format("SPECIAL (%d,%d-%d,%d) [category=%d]: %s\n",
-                                special.beginLine, special.beginColumn, special.endLine, special.endColumn,
-                                special.kind, special.image));
-                        total++;
-                        special = special.next;
-                    }
-                }
-
-                if (t.kind == ca.ucalgary.cpsc49902.javacc.Java12ParserConstants.EOF) break;
-
-                total++;
-                outputBuilder.append(String.format("NORMAL (%d,%d-%d,%d) [category=%d]: %s\n",
-                        t.beginLine, t.beginColumn, t.endLine, t.endColumn, t.kind, t.image));
-            }
-            return total + " token(s) found in the input file(s)\n" + outputBuilder;
-
-        } catch (Exception | Error e) {
-            throw new RuntimeException("JavaCC Lexical Error: " + e.getMessage());
-        }
-    }
-
 }
