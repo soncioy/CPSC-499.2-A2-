@@ -379,18 +379,18 @@ TOKEN :
 void CompilationUnit():
 {}
 {
-    [ <PACKAGE> Name() <SEMICOLON> ]
-    ( <IMPORT> Name() [ <DOT> <STAR> ] <SEMICOLON> )*
-    ( TypeDeclaration() )*
-    <EOF>
+    [ <PACKAGE> Name() <SEMICOLON> ] //optional as not every java file has a package name but this sees package keyword then name and then semicolon
+    ( <IMPORT> Name() [ <DOT> <STAR> ] <SEMICOLON> )* //handles import statements
+    ( TypeDeclaration() )* //handles multiple classes
+    <EOF> //if we see this we have parsed file properly
 }
 
 void TypeDeclaration():
 {}
 {
-    ClassDeclaration()
-   |InterfaceDeclaration()
-   | <SEMICOLON>
+    ClassDeclaration() //tells parser to look for class
+   |InterfaceDeclaration() //or look for interface declaration
+   | <SEMICOLON> //this is null or empty declration as its legal to just have a semicolon
 }
 
 void ClassDeclaration():
@@ -399,46 +399,70 @@ void ClassDeclaration():
     Token nameofclass;
 }
 {
-    Modifiers()
-    <CLASS> nameofclass=<IDENTIFIER>
-    [ <EXTENDS> Name()]
-    [ <IMPLEMENTS> Name() (<COMMA> Name())* ]
-    ClassBody()
+    Modifiers() //public or static
+    <CLASS> nameofclass=<IDENTIFIER> //must see class word and finds the name of class and saves it
+    [ <EXTENDS> Name()] //optional but you can inherit from another class
+    [ <IMPLEMENTS> Name() (<COMMA> Name())* ] //optional handles list of interfaces
+    ClassBody() //checks whats inside the class body and moves to the rules
 }
 
 void InterfaceDeclaration():
 {}
 {
-    Modifiers()
-    <INTERFACE> <IDENTIFIER>
-    [ <EXTENDS> Name() (<COMMA> Name())* ]
-    InterfaceBody()
+    Modifiers() //public or static etc
+    <INTERFACE> <IDENTIFIER> //must see identifier keyword
+    [ <EXTENDS> Name() (<COMMA> Name())* ] //interface can extends multiple things
+    InterfaceBody() //checks whats inside interface body
 }
 
 void ClassBody():
 {}
 {
-    <LBRACE> (ClassBodyDeclaration())*  <RBRACE>
+    <LBRACE> (ClassBodyDeclaration())*  <RBRACE> //container for whatever inside class declarations
 }
 
 void InterfaceBody():
 {}
 {
-    <LBRACE> (InterfaceBodyDeclaration())* <RBRACE>
+    <LBRACE> (InterfaceBodyDeclaration())* <RBRACE> //container for whatever inside interface declarations
 }
 
 void ClassBodyDeclaration():
 {}
 {
-    <SEMICOLON>
-    | Modifiers() MemberDeclaration()
-    | ClassDeclaration()
-    | InterfaceDeclaration()
+    <SEMICOLON> //allowed to have just a semicolon
+    | Modifiers() MemberDeclaration()   //variables or methods
+    | ClassDeclaration() //nested class declration
+    | InterfaceDeclaration() //nested interface declaration
 }
 
 void InterfaceBodyDeclaration():
 {}
 {
-    <SEMICOLON>
-    |Modifiers() MethodHeader() <SEMICOLON>
+    <SEMICOLON> //allowed to have just a semicolon
+    |Modifiers() MethodHeader() <SEMICOLON> //interfaces don't have code blocks for methods and end with semicolon
+}
+
+/*
+Method Declarations and using Lookahead where needed
+ */
+
+void MemberDeclraration():
+{}
+{
+    LOOKAHEAD(ConstructorLookahead()) ConstructorDeclaration //tests to know if it is a constructor
+    | LOOKAHEAD(MethodLookahead()) MethodDeclaration //if not is it a method
+    | FieldDeclaration() //default like int weight;
+}
+
+boolean ConstructorLookahead():
+{}
+{
+    (<IDENTIFIER> <LPAREN> ) {return true;} //constructors have same name as java classes followed by parenthesis here we only check left one
+}
+
+boolean MethodLookahead():
+{}
+{
+    (Type() <IDENTIFIER> <LPAREN> ) {return true;} //methods have return types then identifier and left parenthesis
 }
