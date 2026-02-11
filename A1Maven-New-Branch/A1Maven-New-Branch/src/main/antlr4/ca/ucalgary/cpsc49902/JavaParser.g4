@@ -9,13 +9,7 @@ compilationUnit
     ;
 
 importDeclaration
-    : IMPORT qualifiedIdentifier (PERIOD ASTERISK)? SEMICOLON
-    ;
-
-typeDeclaration
-    : classDeclaration
-    | interfaceDeclaration
-    | SEMICOLON
+    : IMPORT identifier (PERIOD identifier)* (PERIOD ASTRICK)? SEMICOLON
     ;
 
  ============================================================================
@@ -32,21 +26,10 @@ classBody
     ;
 
 classBodyDeclaration
-    : modifier* memberDeclaration
+    : SEMICOLON
     | STATIC? block
-    | SEMICOLON
+    | modifiersOpt memberDecl
     ;
-
-memberDeclaration
-    : methodDeclaration
-    | fieldDeclaration
-    | classDeclaration
-    | interfaceDeclaration
-    ;
-
-
-FormalParame
-
 
 
 variableDeclarators
@@ -59,7 +42,7 @@ variableDeclarators
  ============================================================================
 
 interfaceDeclaration
-    : modifier* INTERFACE Identifier (EXTENDS qualifiedIdentifierList)?
+    : INTERFACE identifier (EXTENDS typeList)?
       interfaceBody
     ;
 
@@ -68,15 +51,14 @@ interfaceBody
     ;
 
 interfaceBodyDeclaration
-    : modifier* interfaceMemberDeclaration
-    | SEMICOLON
+    : SEMICOLON
+    | modifiersOpt interfaceMemberDecl
     ;
 
-interfaceMemberDeclaration
-    : interfaceMethodDeclaration
-    | interfaceFieldDeclaration
-    | classDeclaration
-    | interfaceDeclaration
+interfaceMemberDecl
+    : interfaceMethodOrFieldDecl
+    | VOID identifier voidInterfaceMethodDeclaratorRest
+    | classOrInterfaceDeclaration
     ;
 
 
@@ -85,7 +67,7 @@ interfaceMemberDeclaration
  ============================================================================
 
 formalParameter
-    : FINAL? type Identifier bracketsOpt
+    : FINAL? type variableDeclaratorId
     ;
 
  ============================================================================
@@ -434,7 +416,7 @@ modifiersOpt
     ;
 
 variableDeclaratorRest
-    : backetsOpt (EQUALS variableInitializer)?
+    : bracketsOpt (EQUALS variableInitializer)?
     ;
 
 constantDeclaratorRest
@@ -442,7 +424,7 @@ constantDeclaratorRest
     ;
 
 variableDeclaratorId
-    : Identifier bracketsOpt
+    : identifier bracketsOpt
     ;
 
 typeDeclaration
@@ -478,7 +460,7 @@ memberDecl:
     ;
 
 methodOrFieldDecl
-    : type Identifier methodOrFieldRest
+    : type identifier methodOrFieldRest
     ;
 
 methodOrFieldRest
@@ -487,7 +469,7 @@ methodOrFieldRest
     ;
 
 interfaceMethodOrFieldDecl
-    : type Identifier interfaceMethodOrFieldRest
+    : type identifier interfaceMethodOrFieldRest
     ;
 
 interfaceMethodOrFieldRest
@@ -526,7 +508,7 @@ constructorDeclaratorRest
     ;
 
 formalParameters
-    : OPEN_PARENTHESIS formalParameter (COMMA formalParameter)* CLOSE_PARANTHESIS
+    : OPEN_PARENTHESIS (formalParameter (COMMA formalParameter)*)? CLOSE_PARANTHESIS
     ;
 
 identifier:
@@ -544,3 +526,5 @@ variableDeclarator
 constantDeclarator
     : identifier constantDeclaratorRest
 
+methodBody
+    : block
