@@ -447,12 +447,12 @@ void InterfaceBodyDeclaration():
 Method Declarations and using Lookahead where needed
  */
 
-void MemberDeclraration():
+void MemberDeclaration():
 {}
 {
-    LOOKAHEAD(ConstructorLookahead()) ConstructorDeclaration //tests to know if it is a constructor
-    | LOOKAHEAD(MethodLookahead()) MethodDeclaration //if not is it a method
-    | FieldDeclaration() //default like int weight;
+    LOOKAHEAD(ConstructorLookahead()) ConstructorDeclaration() //tests to know if it is a constructor
+    | LOOKAHEAD(MethodLookahead()) MethodDeclaration() //if not is it a method
+    | FieldDeclaration()//default like int weight;
 }
 
 boolean ConstructorLookahead():
@@ -465,4 +465,50 @@ boolean MethodLookahead():
 {}
 {
     (Type() <IDENTIFIER> <LPAREN> ) {return true;} //methods have return types then identifier and left parenthesis
+}
+
+void ConstructorDeclaration():
+{}
+{
+    <IDENTIFIER> <LPAREN> [ParametersList()] <RPAREN> //name of constructor with a option list of inputs in center
+    [<THROWS> Name() (<COMMA> Name())*] //optional handling of exceptions
+    Block() //code inside the curly braces
+}
+
+void MethodDeclaration():
+{}
+{
+    MethodHeader() //label of our method
+    MethodBody() //block of code etc after label
+}
+
+void MethodHeader():
+{}
+{
+    TypeOrVoid() <IDENTIFIER> <LPAREN> [ParametersList()] <RPAREN> //return type then name of method
+    [<THROWS> Name() (<COMMA> Name())*] //error handling
+}
+
+void MethodBody():
+{}
+{
+    Block() | <SEMICOLON>   //block of code or ends with semicolon
+}
+
+void FieldDeclaration():
+{}
+{
+    Type() VariableDeclarators() <SEMICOLON> //datatype and then variable name followed by semicolon
+}
+
+void VariableDeclarators():
+{}
+{
+    VariableDeclarator() (<COMMA> VariableDeclarators() )* //finds a single declarator and checks if there is a comma followed by other names, as we can have multiple variables in a single lines
+}
+
+void VariableDeclarator():
+{}
+{
+    <IDENTIFIER> (ArrayBrackets())* [<ASSIGN> Expression()] //name of variable, checks if variable is a array, lastly handles assignment operator
 }
