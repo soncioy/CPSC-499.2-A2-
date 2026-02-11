@@ -17,8 +17,10 @@ importDeclaration
  ============================================================================
 
 classDeclaration
-    : modifier* CLASS Identifier (EXTENDS qualifiedIdentifier)?
-      (IMPLEMENTS qualifiedIdentifierList)? classBody
+    : CLASS Identifier
+      (EXTENDS type)?
+      (IMPLEMENTS typeList)?
+      classBody
     ;
 
 classBody
@@ -435,12 +437,6 @@ classOrInterfaceDeclaration
     : modifiersOpt (classDeclaration | interfaceDeclaration)
     ;
 
-classDeclaration
-    : CLASS Identifier
-      (EXTENDS type)?
-      (IMPLEMENTS typeList)?
-      classBody
-    ;
 
 typeList
     : type (COMMA type)*
@@ -512,19 +508,25 @@ formalParameters
     ;
 
 identifier:
-    Idntifier
+    Identifier
+    ;
 
 variableDeclaratorsRest
     :VariableDeclaratorRest (COMMA variableDeclarator)*
+    ;
 
 constantDeclaratorsRest
     : constantDeclaratorRest (COMMA constantDeclarator)*
+    ;
 
 variableDeclarator
     : identifier variableDeclaratorRest
+    ;
 
 constantDeclarator
     : identifier constantDeclaratorRest
+    ;
 
 methodBody
     : block
+    ;
