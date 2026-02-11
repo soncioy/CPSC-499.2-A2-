@@ -512,3 +512,91 @@ void VariableDeclarator():
 {
     <IDENTIFIER> (ArrayBrackets())* [<ASSIGN> Expression()] //name of variable, checks if variable is a array, lastly handles assignment operator
 }
+
+/*
+Modifiers, types and Names
+ */
+
+ void Modifiers():
+ {}
+ {
+   (Modifier())*
+ }
+
+ void Modifier():
+ {}
+ {
+    <PUBLIC> | <PROTECTED> | <STRICTFP> | <PRIVATE> | <STATIC> | <FINAL> | <ABSTRACT> | <NATIVE> | <SYNCHRONIZED> | <TRANSIENT> | <VOLATILE>
+ }
+
+ void TypeOrVoid():
+ {}
+ {
+    <VOID> | Type()
+ }
+
+ void Type():
+ {}
+ {
+    PrimitiveType() (ArrayBrackets())*
+    |Name() (ArrayBrackets())*
+ }
+
+ void PrimitiveType():
+ {}
+ {
+    <BOOLEAN> | <BYTE> | <SHORT> | <INT> | <LONG> | <CHAR> | <FLOAT> | <DOUBLE>
+ }
+
+ void ArrayBrackets():
+ {}
+ {
+    <LBRACKET> <RBRACKET>
+ }
+
+ void ParametersList():
+ {}
+ {
+    Parameter() (<COMMA> Parameter())*
+ }
+
+ void Parameter():
+ {}
+ {
+    Type() <IDENTIFIER> (ArrayBrackets())*
+ }
+
+ void Name():
+ {}
+ {
+    <IDENTIFIER> (<DOT> <IDENTIFIER> )*
+ }
+
+ /*
+ Blocks and statements
+  */
+
+void Block():
+{}
+{
+    <LBRACE> (BlockStatement())* <RBRACE>
+}
+
+void BlockStatement():
+{}
+{
+    LOOKAHEAD(LocalVarDeclarationLookahead() ) LocalVariableDeclarationStatement()
+    | Statement()
+}
+
+boolean LocalVarDeclarationLookahead():
+{}
+{
+    (Type() <IDENTIFIER> ) {return true;}
+}
+
+void LocalVariableDeclarationStatement():
+{}
+{
+    Type() VariableDeclarators() <SEMICOLON>
+}
