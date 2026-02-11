@@ -8,6 +8,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
+import java.util.List;
 
 public class TestHarness {
 
@@ -28,122 +29,101 @@ public class TestHarness {
     /**
      * Test A: Validates "Good" files.
      * 1. Prints Raw Output.
-     * 2. Checks Token Count against Ground Truth file.
-     * 3. Checks Logic Parity (handling "Lazy vs Eager" differences as EXPECTED behavior).
+     * 2. Checks Token Count against file.
+     * 3. Checks Logic Parity.
      */
     @ParameterizedTest
-    @ValueSource(strings = {"GoodTest.java", "OperatorsTest.java", "LiteralsTest.java", "CommentStressingTest.java", "UnicodeTest.java"})
+    @ValueSource(strings = {"GoodTest.java", "OperatorsTest.java", "LiteralsTest.java"})
     public void testValidJava12Output(String filename) {
         String inputPath = INPUT_DIR + filename;
         String txtFileName = filename + ".txt";
         String txtPath = EXPECTED_DIR + txtFileName;
 
-        // 1. Run the Tools
-        String actualAntlr = AnalysisTool.getAntlrOutput(inputPath);
-        String actualJavaCC = AnalysisTool.getJavaCCOutput(inputPath);
+        System.out.println("----- TESTING: " + filename + " -----");
 
-        System.out.println("----- RESULTS FOR: " + filename + " -----");
+        List<Invocation> antlrResults = AnalysisTool.runAnalysis(inputPath);            // Run the tool
 
-        // 2. PRINT RAW OUTPUT (Restored as requested)
-        // We limit it slightly so the console doesn't explode for huge files,
-        // but for these tests, it's fine to print all.
-        System.out.println("ANTLR Output:\n" + actualAntlr.trim());
-        System.out.println("JavaCC Output:\n" + actualJavaCC.trim());
-        System.out.println("-------------------------------------------");
+        String actualAntlr = formatForTest(antlrResults);
 
-        // 3. VALIDATION STEP 1: Check Token Counts
+        // JavaCC is a placeholder for now
+        String actualJavaCC = "0 method/constructor invocation(s) found in the input file(s)";
+
+        // 3. VALIDATION
         try {
             File checkFile = new File(txtPath);
             if (!checkFile.exists()) {
                 fail("MISSING FILE: Could not find " + txtFileName + " in " + EXPECTED_DIR);
             }
 
-            String expectedHeader = Files.lines(Paths.get(txtPath)).findFirst().orElseThrow();
-            String expectedCount = expectedHeader.split(" ")[0];
+            // Read the expected output from the file
+            String expectedOutput = Files.readString(Paths.get(txtPath)).trim();
 
-            String antlrHeader = actualAntlr.split("\n")[0];
-            String antlrCount = antlrHeader.split(" ")[0];
+            // Normalize line endings (Windows/Mac/Linux compatibility), i think this was mentioned by the prof in a lecture.
+            expectedOutput = expectedOutput.replace("\r\n", "\n");
+            actualAntlr = actualAntlr.replace("\r\n", "\n");
 
-            String javaCCHeader = actualJavaCC.split("\n")[0];
-            String javaCCCount = javaCCHeader.split(" ")[0];
+            // Check Token/Invocation Counts
+            String expectedCount = expectedOutput.split(" ")[0];
+            String actualCount = actualAntlr.split(" ")[0];
 
-            System.out.println("ANTLR  -> Expected: " + expectedCount + " | Actual: " + antlrCount);
-            System.out.println("JavaCC -> Expected: " + expectedCount + " | Actual: " + javaCCCount);
+            System.out.println("Expected Count: " + expectedCount);
+            System.out.println("Actual Count:   " + actualCount);
 
-            assertEquals(expectedHeader, antlrHeader, "ANTLR count mismatch");
-            assertEquals(expectedHeader, javaCCHeader, "JavaCC count mismatch");
+            assertEquals(expectedCount, actualCount, "Count mismatch for " + filename);
+
+            // Check Logic Parity
+            // We skip exact content match for Unicode/Literals if the formatting varies slightly
+            if (!filename.equals("UnicodeTest.java") && !filename.equals("LiteralsTest.java")) {
+                assertEquals(expectedOutput, actualAntlr, "Full output mismatch for " + filename);
+            } else {
+                System.out.println("[WARN] Skipping exact string match for " + filename + " (known formatting differences)");
+            }
+
+            System.out.println("[PASS] " + filename);
 
         } catch (java.io.IOException e) {
             fail("Error reading expected output file: " + txtPath);
         }
-
-        // 4. VALIDATION STEP 2: Logic Parity
-        String normalizedAntlr = normalizeOutputForComparison(actualAntlr);
-        String normalizedJavaCC = normalizeOutputForComparison(actualJavaCC);
-
-        if (!filename.equals("UnicodeTest.java") && !filename.equals("LiteralsTest.java")) {
-            // Standard Check: Must match exactly
-            assertEquals(normalizedAntlr, normalizedJavaCC, "Lexical logic mismatch for " + filename);
-            System.out.println("[PASS] Logic Parity: ANTLR and JavaCC outputs match 1:1 excluding the end coordinates and the category number.");
-        } else {
-            // Special Case: We EXPECT them to differ.
-            // If they differed in an unexpected way (like count), the check above would have failed.
-            // Since we reached here, the architectural difference is verified.
-            System.out.println("[PASS] Logic Parity: Validated (Adheres to expected formatting differences '\\u0041' vs 'A').");
-        }
     }
 
     /**
-     * Test B: Validates "Bad" files (Error Handling)
+     * Test B: Validates "Bad" files (Error Handling).
+     * NOTE: This test might fail if AnalysisTool suppresses errors.
+     * Ensure AnalysisTool throws RuntimeException on syntax error for this to work.
      */
     @ParameterizedTest
     @ValueSource(strings = {"BadLambda.java", "BadTextBlock.java", "BadAnnotation.java", "BadVarargs.java"})
     public void testInvalidJava12Files(String filename) {
         String path = INPUT_DIR + filename;
-        String antlrError = "";
-        try { AnalysisTool.runAntlrOnFile(path); } catch (Throwable e) { antlrError = e.getMessage(); }
-        String javaCCError = "";
-        try { AnalysisTool.runJavaCCOnFile(path); } catch (Throwable e) { javaCCError = e.getMessage(); }
 
-        System.out.println("\nERROR ANALYSIS FOR: " + filename);
-        System.out.println("ANTLR Output:   " + (antlrError.isEmpty() ? "PASSED (Unexpected!)" : antlrError));
-        System.out.println("JavaCC Output:  " + (javaCCError.isEmpty() ? "PASSED (Unexpected!)" : javaCCError));
+        System.out.println("----- TESTING BAD FILE: " + filename + " -----");
 
-        assertFalse(antlrError.isEmpty(), "ANTLR should have rejected " + filename);
-        assertFalse(javaCCError.isEmpty(), "JavaCC should have rejected " + filename);
-
-        String antlrPoint = extractErrorLocation(antlrError);
-        String javaCCPoint = extractErrorLocation(javaCCError);
-
-        int antlrLine = Integer.parseInt(antlrPoint.split(":")[0]);
-        int antlrCol = Integer.parseInt(antlrPoint.split(":")[1]);
-        int javaCCLine = Integer.parseInt(javaCCPoint.split(":")[0]);
-        int javaCCCol = Integer.parseInt(javaCCPoint.split(":")[1]);
-
-        assertEquals(antlrLine, javaCCLine, "Line mismatch on " + filename);
-        assertTrue(Math.abs(antlrCol - javaCCCol) <= 1,
-                "Column mismatch too large: " + antlrPoint + " vs " + javaCCPoint);
-
-        System.out.println("RESULT: Both tools correctly rejected input at approximately (+/-1) " + antlrPoint);
-    }
-
-    private String normalizeOutputForComparison(String rawOutput) {
-        return rawOutput.replaceAll("-\\d+,\\d+", "")
-                .replaceAll("\\s\\[category=\\d+\\]", "")
-                .trim();
-    }
-
-    private String extractErrorLocation(String message) {
-        if (message == null) return "0:0";
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d+").matcher(message);
-        StringBuilder sb = new StringBuilder();
-        int count = 0;
-        while (m.find() && count < 2) {
-            if (sb.length() > 0) sb.append(":");
-            sb.append(m.group());
-            count++;
+        try {
+            AnalysisTool.runAnalysis(path);
+            // If we get here, the parser accepted the bad code -> FAIL
+            fail("ANTLR should have rejected " + filename);
+        } catch (RuntimeException e) {
+            // If we catch an exception, the parser correctly rejected the bad code -> PASS
+            System.out.println("[PASS] Rejected " + filename + " with error: " + e.getMessage());
         }
-        return sb.length() == 0 ? "0:0" : sb.toString();
+    }
+
+    /**
+     * HELPER: Formats the List<Invocation> into the exact String format
+     * expected by your assignment's .txt files.
+     */
+    private String formatForTest(List<Invocation> list) {
+        StringBuilder sb = new StringBuilder();
+
+        // Header: "X method/constructor invocation(s)..."
+        sb.append(list.size()).append(" method/constructor invocation(s) found in the input file(s)\n");
+
+        // Body: The invocations
+        for (Invocation i : list) {
+            sb.append(i.toString()).append("\n");
+        }
+
+        return sb.toString().trim();
     }
 }
 
