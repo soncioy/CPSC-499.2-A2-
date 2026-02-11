@@ -372,3 +372,73 @@ TOKEN :
     "\u1040"-"\u1049"
     ] >
 }
+
+/**
+* Below are the production rules based on the tokens above
+*/
+void CompilationUnit():
+{}
+{
+    [ <PACKAGE> Name() <SEMICOLON> ]
+    ( <IMPORT> Name() [ <DOT> <STAR> ] <SEMICOLON> )*
+    ( TypeDeclaration() )*
+    <EOF>
+}
+
+void TypeDeclaration():
+{}
+{
+    ClassDeclaration()
+   |InterfaceDeclaration()
+   | <SEMICOLON>
+}
+
+void ClassDeclaration():
+{
+    //acts like a variable
+    Token nameofclass;
+}
+{
+    Modifiers()
+    <CLASS> nameofclass=<IDENTIFIER>
+    [ <EXTENDS> Name()]
+    [ <IMPLEMENTS> Name() (<COMMA> Name())* ]
+    ClassBody()
+}
+
+void InterfaceDeclaration():
+{}
+{
+    Modifiers()
+    <INTERFACE> <IDENTIFIER>
+    [ <EXTENDS> Name() (<COMMA> Name())* ]
+    InterfaceBody()
+}
+
+void ClassBody():
+{}
+{
+    <LBRACE> (ClassBodyDeclaration())*  <RBRACE>
+}
+
+void InterfaceBody():
+{}
+{
+    <LBRACE> (InterfaceBodyDeclaration())* <RBRACE>
+}
+
+void ClassBodyDeclaration():
+{}
+{
+    <SEMICOLON>
+    | Modifiers() MemberDeclaration()
+    | ClassDeclaration()
+    | InterfaceDeclaration()
+}
+
+void InterfaceBodyDeclaration():
+{}
+{
+    <SEMICOLON>
+    |Modifiers() MethodHeader() <SEMICOLON>
+}
