@@ -6,10 +6,11 @@ compilationUnit
     : (PACKAGE qualifiedIdentifier SEMICOLON)?
       importDeclaration*
       typeDeclaration*
+      EOF
     ;
 
 importDeclaration
-    : IMPORT identifier (PERIOD identifier)* (PERIOD ASTRICK)? SEMICOLON
+    : IMPORT identifier (PERIOD identifier)* (PERIOD ASTERISK)? SEMICOLON
     ;
 
 // ============================================================================
@@ -127,27 +128,26 @@ bracketsOpt
  //============================================================================
 
 block
-    : OPEN_BRACE blockStatement* CLOSE_BRACE
+    : OPEN_BRACE blockStatements CLOSE_BRACE
     ;
 
 blockStatement
-    : localVariableDeclaration SEMICOLON
-    | statement
-    | classDeclaration
+    : localVariableDeclarationStatement
+    | classOrInterfaceDeclaration
+    | (Identifier COLON)? statement
     ;
 
 forInit
-    : localVariableDeclaration
-    | expressionList
+    : statementExpression moreStatementExpressions
+    | FINAL? type variableDeclarators
     ;
 
 forUpdate
-    : expressionList
+    : statementExpression moreStatementExpressions
     ;
 
-
 switchBlockStatementGroup
-    : switchLabel+ blockStatement*
+    : switchLabel blockStatements
     ;
 
 switchLabel
@@ -203,35 +203,45 @@ expression1Rest
     : (QUESTION expression COLON expression1)?
     ;
 
+// The bottom of the ladder (Lowest Priority)
 expression2
-    : expression3 (expression2Rest)?
+    : additiveExpression
+    | additiveExpression INSTANCEOF type
+    ;
+//expression2Rest
+//    : (infixOp expression3)*
+//    | expression3 INSTANCEOF type
+//    ;
+
+//infixOp
+//    : DOUBLE_PIPE
+//    | DOUBLE_AMPERSAND
+//    | PIPE
+//    | CARET
+//    | AMPERSAND
+//    | DOUBLE_EQUALS
+//    | EXCLAMATION_EQUALS
+//    | LESS_THAN
+//    | GREATER_THAN
+//    | LESS_THAN_OR_EQUALS
+//    | GREATER_THAN_OR_EQUALS
+//    | DOUBLE_LESS_THAN
+//    | DOUBLE_GREATER_THAN
+//    | TRIPLE_GREATER_THAN
+//    | PLUS
+//    | MINUS
+//    | ASTERISK
+//    | SLASH
+//    | PERCENT
+//    ;
+// Level 1: Addition and Subtraction
+additiveExpression
+    : multiplicativeExpression ((PLUS | MINUS) multiplicativeExpression)*
     ;
 
-expression2Rest
-    : (infixOp expression3)*
-    | expression3 INSTANCEOF type
-    ;
-
-infixOp
-    : DOUBLE_PIPE
-    | DOUBLE_AMPERSAND
-    | PIPE
-    | CARET
-    | AMPERSAND
-    | DOUBLE_EQUALS
-    | EXCLAMATION_EQUALS
-    | LESS_THAN
-    | GREATER_THAN
-    | LESS_THAN_OR_EQUALS
-    | GREATER_THAN_OR_EQUALS
-    | DOUBLE_LESS_THAN
-    | DOUBLE_GREATER_THAN
-    | TRIPLE_GREATER_THAN
-    | PLUS
-    | MINUS
-    | ASTERISK
-    | SLASH
-    | PERCENT
+// Level 2: Multiplication, Division, and Remainder (Strongest)
+multiplicativeExpression
+    : expression3 ((ASTERISK | SLASH | PERCENT) expression3)*
     ;
 
 expression3
@@ -307,9 +317,8 @@ innerCreator
     ;
 
 arrayCreatorRest
-    : OPEN_BRACKET ( CLOSE_BRACKET bracketsOpt arrayInitializer
-                   | expression CLOSE_BRACKET (OPEN_BRACKET
-                     (expression)? CLOSE_BRACKET)* bracketsOpt)
+    : OPEN_BRACKET CLOSE_BRACKET bracketsOpt arrayInitializer
+    | OPEN_BRACKET expression CLOSE_BRACKET (OPEN_BRACKET expression CLOSE_BRACKET)* bracketsOpt
     ;
 
 classCreatorRest
@@ -343,18 +352,10 @@ parExpression
     : OPEN_PARENTHESIS expression CLOSE_PARENTHESIS
     ;
 
-block
-    : OPEN_BRACE blockStatements CLOSE_BRACE
-    ;
 
 blockStatements
-    : blockStatement*
-    ;
-
-blockStatement
-    : localVariableDeclarationStatement
-    | classOrInterfaceDeclaration
-    | (Identifier COLON)? statement
+    : blockStatement+
+    |
     ;
 
 localVariableDeclarationStatement
@@ -364,7 +365,7 @@ localVariableDeclarationStatement
 statement
     : block
     | IF parExpression statement (ELSE statement)?
-    | FOR OPEN_PARENTHESIS forInitOpt SEMICOLON expression? SEMICOLON forUpdateOpt CLOSE_PARENTHESIS statement
+    | FOR OPEN_PARENTHESIS forInit SEMICOLON expression? SEMICOLON forUpdate CLOSE_PARENTHESIS statement
     | WHILE parExpression statement
     | DO statement WHILE parExpression SEMICOLON
     | TRY block (catches | catches? FINALLY block)
@@ -375,7 +376,7 @@ statement
     | BREAK Identifier?
     | CONTINUE Identifier?
     | SEMICOLON
-    | expressionStatement
+//    | expressionStatement
     | Identifier COLON statement
     ;
 
@@ -383,34 +384,13 @@ catches
     : catchClause catchClause*
     ;
 
-catchClause
-    : CATCH OPEN_PARENTHESIS formalParameter CLOSE_PARENTHESIS block
-    ;
-
 switchBlockStatementGroups
     : switchBlockStatementGroup*
     ;
 
-switchBlockStatementGroup
-    : switchLabel blockStatements
-    ;
-
-switchLabel
-    : CASE constantExpression COLON
-    | DEFAULT COLON
-    ;
 
 moreStatementExpressions
     : (COMMA statementExpression)*
-    ;
-
-forInit
-    : statementExpression moreStatementExpressions
-    | FINAL? type variableDeclarators
-    ;
-
-forUpdate
-    : statementExpression moreStatementExpressions
     ;
 
 modifiersOpt
@@ -430,7 +410,7 @@ variableDeclaratorId
     ;
 
 typeDeclaration
-    : classOrInterfaceDeclartion
+    : classOrInterfaceDeclaration
     ;
 
 classOrInterfaceDeclaration
@@ -504,7 +484,7 @@ constructorDeclaratorRest
     ;
 
 formalParameters
-    : OPEN_PARENTHESIS (formalParameter (COMMA formalParameter)*)? CLOSE_PARANTHESIS
+    : OPEN_PARENTHESIS (formalParameter (COMMA formalParameter)*)? CLOSE_PARENTHESIS
     ;
 
 identifier:
@@ -530,3 +510,5 @@ constantDeclarator
 methodBody
     : block
     ;
+
+expressionList : expression (COMMA expression)* ;
