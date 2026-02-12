@@ -373,26 +373,233 @@ TOKEN :
     ] >
 }
 
+
 /**
-* Below are the production rules based on the tokens above
+* Names, Identifiers and Literals
 */
-void CompilationUnit():
-{}
+/* JLS2: Identifier: IDENTIFIER */
+void Identifier():
 {
-    [ <PACKAGE> Name() <SEMICOLON> ] //optional as not every java file has a package name but this sees package keyword then name and then semicolon
-    ( <IMPORT> Name() [ <DOT> <STAR> ] <SEMICOLON> )* //handles import statements
+}
+{
+    <IDENTIFIER>
+}
+
+/* JLS2: QualifiedIdentifier: Identifier { . Identifier } */
+void QualifiedIdentifier():
+{
+}
+{
+    Identifier() (<DOT> Identifier() )*
+}
+
+/* JLS2: Literal:
+ *   IntegerLiteral | FloatingPointLiteral | CharacterLiteral
+ * | StringLiteral | BooleanLiteral | NullLiteral
+ */
+void Literal():
+{
+}
+{
+    IntegerLiteral()
+    | FloatingPointLiteral()
+    | CharacterLiteral()
+    | StringLiteral()
+    | BooleanLiteral()
+    | NullLiteral()
+}
+
+/**
+* Helpers for literals
+*/
+void IntegerLiteral():
+{
+}
+{
+    <INTEGER_LITERAL>
+}
+
+void FloatingPointLiteral():
+{
+}
+{
+    <FLOATING_POINT_LITERAL>
+}
+
+void CharacterLiteral():
+{
+}
+{
+    <CHARACTER_LITERAL>
+}
+
+void StringLiteral():
+{
+}
+{
+    <STRING_LITERAL>
+}
+
+void BooleanLiteral():
+{
+}
+{
+    <TRUE> | <FALSE>
+}
+
+void NullLiteral():
+{
+}
+{
+    <NULL>
+}
+
+//we replace QualifierIdentifier with this
+void Name():
+{
+}
+{
+    <IDENTIFIER> (<DOT> <IDENTIFIER> )*
+}
+/**
+* Below are the production rules based on JLS2 CHAPTER 18 GRAMMAR.
+  [X] == [X]
+  {X} == (X)*
+  word package == <PACKAGE> token
+  end of file == <EOF>
+
+  So we convert each and every rule one by one from JLS2 TO JAVACC equivalent
+*/
+
+/*
+JLS2
+CompilationUnit:
+[package QualifiedIdentifier ; ] {ImportDeclaration}
+{TypeDeclaration}
+ */
+void CompilationUnit():
+{
+}
+{
+    [ PackageDeclaration() ] //optional as not every java file has a package name but this sees package keyword then name and then semicolon
+    ( ImportDeclaration() )* //handles import statements
     ( TypeDeclaration() )* //handles multiple classes
     <EOF> //if we see this we have parsed file properly
 }
 
+/*
+JLS2
+[package QualifiedIdentifier ;]
+made seperate rule
+ */
+void PackageDeclaration():
+{
+}
+{
+    <PACKAGE> Name() <SEMICOLON> //Name() is like QualifiedIdentifier
+}
+
+/*
+JLS2
+ImportDeclaration:
+  import Identifier { . Identifier } [ . * ] ;
+ */
+void ImportDeclaration():
+{
+}
+{
+    <IMPORT> Name() [<DOT><STAR>] <SEMICOLON> //pretty easy to understand this
+}
+
+/*
+JLS2
+TypeDeclaration:
+  ClassOrInterfaceDeclaration
+| ;
+ */
 void TypeDeclaration():
-{}
+{
+}
 {
     ClassDeclaration() //tells parser to look for class
    |InterfaceDeclaration() //or look for interface declaration
    | <SEMICOLON> //this is null or empty declration as its legal to just have a semicolon
 }
 
+/* JLS2: ModifiersOpt: { Modifier } */
+void Modifiers():
+{
+}
+{
+    (Modifier() )*
+}
+
+/* JLS2: Modifier:
+ * public | protected | private | static | abstract | final | native |
+ * synchronized | transient | volatile | strictfp
+ */
+void Modifier():
+{
+}
+{
+    <PUBLIC> | <STATIC> | <PROTECTED> | <PRIVATE> | <ABSTRACT> | <FINAL>
+    | <NATIVE> | <SYNCHRONIZED> | <TRANSIENT> | <VOLATILE> | <STRICTFP>
+}
+
+/* JLS2: BasicType:
+ * byte | short | char | int | long | float | double | boolean
+ */
+void PrimitiveType():
+{
+}
+{
+    <BYTE> | <SHORT>  | <CHAR> | <INT> | <LONG> | <FLOAT> | <DOUBLE> | <BOOLEAN>
+}
+
+/* JLS2: BracketsOpt: { [] } */
+void BracketsOpt():
+{
+}
+{
+    (<LBRACKET> <RBRACKET> )*
+}
+
+//helper array brackets
+void ArrayBrackets():
+{
+}
+{
+   <LBRACKET> <RBRACKET>
+}
+
+/* JLS2: Type:
+ *   Identifier { . Identifier } BracketsOpt
+ * | BasicType
+ * */
+void Type():
+{
+}
+{
+   PrimitiveType() (ArrayBrackets())*
+   |Name() (ArrayBrackets())*
+}
+
+void TypeOrVoid():
+{
+}
+{
+   <VOID> | Type()
+}
+
+
+//CLASSES AND INTERFACES
+
+
+/*
+JLS2
+ClassDeclaration:
+  class Identifier [extends Type] [implements TypeList] ClassBody
+ */
 void ClassDeclaration():
 {
     //acts like a variable
@@ -401,202 +608,428 @@ void ClassDeclaration():
 {
     Modifiers() //public or static
     <CLASS> nameofclass=<IDENTIFIER> //must see class word and finds the name of class and saves it
-    [ <EXTENDS> Name()] //optional but you can inherit from another class
-    [ <IMPLEMENTS> Name() (<COMMA> Name())* ] //optional handles list of interfaces
-    ClassBody() //checks whats inside the class body and moves to the rules
+    [ <EXTENDS> Name()] //optional matches extends followed by a class name
+    [ <IMPLEMENTS> Name() (<COMMA> Name())* ] //matches implements and a comma seperated list
+    ClassBody() //handles what's inside the class body and moves to the rules
 }
 
-void InterfaceDeclaration():
-{}
-{
-    Modifiers() //public or static etc
-    <INTERFACE> <IDENTIFIER> //must see identifier keyword
-    [ <EXTENDS> Name() (<COMMA> Name())* ] //interface can extends multiple things
-    InterfaceBody() //checks whats inside interface body
-}
-
+/*
+JLS2
+ClassBody:
+  { {ClassBodyDeclaration} }
+ */
 void ClassBody():
-{}
+{
+}
 {
     <LBRACE> (ClassBodyDeclaration())*  <RBRACE> //container for whatever inside class declarations
 }
 
-void InterfaceBody():
-{}
-{
-    <LBRACE> (InterfaceBodyDeclaration())* <RBRACE> //container for whatever inside interface declarations
-}
-
+/*
+JLS2
+ClassBodyDeclaration:
+  ;
+| [static] Block
+| ModifiersOpt MemberDecl
+ */
 void ClassBodyDeclaration():
-{}
 {
-    <SEMICOLON> //allowed to have just a semicolon
-    | Modifiers() MemberDeclaration()   //variables or methods
-    | ClassDeclaration() //nested class declration
-    | InterfaceDeclaration() //nested interface declaration
 }
-
-void InterfaceBodyDeclaration():
-{}
 {
     <SEMICOLON> //allowed to have just a semicolon
-    |Modifiers() MethodHeader() <SEMICOLON> //interfaces don't have code blocks for methods and end with semicolon
+    | LOOKAHEAD(2) [<STATIC>] Block() //parser sees static and block as lookahead is 2
+    | Modifiers() MemberDeclaration()   //variables or methods
 }
 
 /*
-Method Declarations and using Lookahead where needed
+InterfaceDeclaration:
+  interface Identifier [extends TypeList] InterfaceBody
+ */
+void InterfaceDeclaration():
+{
+}
+{
+    Modifiers()
+    <INTERFACE> <IDENTIFIER>
+    [<EXTENDS> Name() (<COMMA> Name() )*]
+    InterfaceBody()
+}
+
+/*
+JLS2
+InterfaceBody:
+  { {InterfaceBodyDeclaration} }
+ */
+void InterfaceBody():
+{
+}
+{
+    <LBRACE> (InterfaceBodyDeclaration() )* <RBRACE>
+}
+
+/*
+JLS2
+InterfaceBodyDeclaration:
+  ;
+| ModifiersOpt InterfaceMemberDecl
+ */
+void InterfaceBodyDeclaration():
+{
+}
+{
+    <SEMICOLON>
+    |Modifiers() MethodHeader() <SEMICOLON>
+    |Modifiers() ConstantDeclaration()
+    |ClassDeclaration()
+    |InterfaceDeclaration()
+}
+
+
+//PARAMETERS
+
+
+/* JLS2:
+ * FormalParameters:
+ *   ( [FormalParameter { , FormalParameter}] )
+ */
+void ParametersList():
+{
+}
+{
+   Parameter() (<COMMA> Parameter())*
+}
+
+void Parameter():
+{
+}
+{
+   Type() <IDENTIFIER> (ArrayBrackets())*
+}
+
+
+
+
+
+/*
+MEMBER DECLARATIONS
  */
 
+
+
+/*
+ * JLS2 MemberDecl:
+ *   MethodOrFieldDecl
+ * | void Identifier MethodDeclaratorRest
+ * | Identifier ConstructorDeclaratorRest
+ * | ClassOrInterfaceDeclaration
+ */
 void MemberDeclaration():
-{}
 {
-    LOOKAHEAD(ConstructorLookahead()) ConstructorDeclaration() //tests to know if it is a constructor
-    | LOOKAHEAD(MethodLookahead()) MethodDeclaration() //if not is it a method
-    | FieldDeclaration()//default like int weight;
+}
+{
+    LOOKAHEAD(ConstructorLookahead()) ConstructorDeclaration()
+    | LOOKAHEAD(MethodLookahead()) MethodDeclaration()
+    | FieldDeclaration()
 }
 
 boolean ConstructorLookahead():
-{}
 {
-    (<IDENTIFIER> <LPAREN> ) {return true;} //constructors have same name as java classes followed by parenthesis here we only check left one
+}
+{
+    (<IDENTIFIER> <LPAREN> ) {return true;}
 }
 
 boolean MethodLookahead():
-{}
 {
-    (Type() <IDENTIFIER> <LPAREN> ) {return true;} //methods have return types then identifier and left parenthesis
+}
+{
+    (TypeOrVoid() <IDENTIFIER> <LPAREN> ) {return true;}
 }
 
+/* JLS2 ConstructorDeclaratorRest:
+ * FormalParameters [throws QualifiedIdentifierList] MethodBody
+ */
 void ConstructorDeclaration():
-{}
+{
+}
 {
     <IDENTIFIER> <LPAREN> [ParametersList()] <RPAREN> //name of constructor with a option list of inputs in center
     [<THROWS> Name() (<COMMA> Name())*] //optional handling of exceptions
-    Block() //code inside the curly braces
+    ConstructorBody() //code inside the curly braces
+}
+
+
+void ConstructorBody():
+{
+}
+{
+    <LBRACE>
+        [ExplicitConstructorInvocation()]
+        (BlockStatement())*
+    <RBRACE>
+}
+
+void ExplicitConstructorInvocation():
+{
+    Token start;
+    Token end;
+}
+{
+    //this or super as mentioned in JLS are part of java syntax
+    (<THIS> <LPAREN> [ArgumentList()] <RPAREN> <SEMICOLON>
+   | <SUPER> <LPAREN> [ArgumentList()] <RPAREN> <SEMICOLON> )
+   { recordInvocation(start, end);}
 }
 
 void MethodDeclaration():
-{}
+{
+}
 {
     MethodHeader() //label of our method
     MethodBody() //block of code etc after label
 }
 
 void MethodHeader():
-{}
+{
+}
 {
     TypeOrVoid() <IDENTIFIER> <LPAREN> [ParametersList()] <RPAREN> //return type then name of method
     [<THROWS> Name() (<COMMA> Name())*] //error handling
 }
 
 void MethodBody():
-{}
+{
+}
 {
     Block() | <SEMICOLON>   //block of code or ends with semicolon
 }
 
 void FieldDeclaration():
-{}
+{
+}
 {
     Type() VariableDeclarators() <SEMICOLON> //datatype and then variable name followed by semicolon
 }
 
 void VariableDeclarators():
-{}
 {
-    VariableDeclarator() (<COMMA> VariableDeclarators() )* //finds a single declarator and checks if there is a comma followed by other names, as we can have multiple variables in a single lines
+}
+{
+    VariableDeclarator() (<COMMA> VariableDeclarator() )* //finds a single declarator and checks if there is a comma followed by other names, as we can have multiple variables in a single lines
 }
 
-void VariableDeclarator():
-{}
-{
-    <IDENTIFIER> (ArrayBrackets())* [<ASSIGN> Expression()] //name of variable, checks if variable is a array, lastly handles assignment operator
-}
-
-/*
-Modifiers, types and Names
+/* JLS2:
+ * VariableDeclarator:
+ *   Identifier VariableDeclaratorRest
+ * VariableDeclaratorRest:
+ *   BracketsOpt [ = VariableInitializer ]
  */
+void VariableDeclarator():
+{
+}
+{
+    <IDENTIFIER> (ArrayBrackets())* [<ASSIGN> VariableInitializer() ] //name of variable, checks if variable is a array, lastly handles assignment operator
+}
 
- void Modifiers():
- {}
- {
-   (Modifier())*
- }
+void ConstantDeclaration():
+{
+}
+{
+    //implicit constants like public static final
+    Type() VariableDeclarators() <SEMICOLON>
+}
 
- void Modifier():
- {}
- {
-    <PUBLIC> | <PROTECTED> | <STRICTFP> | <PRIVATE> | <STATIC> | <FINAL> | <ABSTRACT> | <NATIVE> | <SYNCHRONIZED> | <TRANSIENT> | <VOLATILE>
- }
+/* JLS2:
+ * ArrayInitializer:
+ *   { [VariableInitializer {, VariableInitializer} [,]] }
+ * VariableInitializer:
+ *   ArrayInitializer | Expression
+ */
+void ArrayInitializer():
+{
+}
+{
+    <LBRACE>
+        [VariableInitializer() (<COMMA> VariableInitializer())* ]
+        [ <COMMA> ]
+    <RBRACE>
+}
 
- void TypeOrVoid():
- {}
- {
-    <VOID> | Type()
- }
+void VariableInitializer():
+{
+}
+{
+    Expression()
+    |ArrayInitializer()
+}
 
- void Type():
- {}
- {
-    PrimitiveType() (ArrayBrackets())*
-    |Name() (ArrayBrackets())*
- }
-
- void PrimitiveType():
- {}
- {
-    <BOOLEAN> | <BYTE> | <SHORT> | <INT> | <LONG> | <CHAR> | <FLOAT> | <DOUBLE>
- }
-
- void ArrayBrackets():
- {}
- {
-    <LBRACKET> <RBRACKET>
- }
-
- void ParametersList():
- {}
- {
-    Parameter() (<COMMA> Parameter())*
- }
-
- void Parameter():
- {}
- {
-    Type() <IDENTIFIER> (ArrayBrackets())*
- }
-
- void Name():
- {}
- {
-    <IDENTIFIER> (<DOT> <IDENTIFIER> )*
- }
 
  /*
  Blocks and statements
   */
 
+
+/* JLS2 Block:
+ *   { BlockStatements }
+ * BlockStatements:
+ *   { BlockStatement }
+ */
 void Block():
-{}
+{
+}
 {
     <LBRACE> (BlockStatement())* <RBRACE>
 }
 
+/* JLS2 BlockStatement:
+ *   LocalVariableDeclarationStatement
+ * | ClassOrInterfaceDeclaration
+ * | [Identifier :] Statement
+ */
 void BlockStatement():
-{}
 {
-    LOOKAHEAD(LocalVarDeclarationLookahead() ) LocalVariableDeclarationStatement()
+}
+{
+    LOOKAHEAD( (<FINAL>)? Type() <IDENTIFIER> ) LocalVariableDeclarationStatement()
     | Statement()
 }
 
-boolean LocalVarDeclarationLookahead():
-{}
+/* JLS2 LocalVariableDeclarationStatement:
+ *   [final] Type VariableDeclarators ;
+ */
+void LocalVariableDeclarationStatement():
 {
-    (Type() <IDENTIFIER> ) {return true;}
+}
+{
+    [<FINAL>] Type() VariableDeclarators() <SEMICOLON>
 }
 
-void LocalVariableDeclarationStatement():
-{}
+/* JLS2 StatementExpression: Expression */
+void StatementExpression():
 {
-    Type() VariableDeclarators() <SEMICOLON>
 }
+{
+    Expression()
+}
+
+void ArgumentList():
+{
+}
+{
+    Expression() (<COMMA> Expression())*
+}
+
+/* JLS2 ParExpression: ( Expression ) */
+void ParExpression():
+{
+}
+{
+    <LPAREN> Expression() <RPAREN>
+}
+
+/* JLS2 Statement:
+ * Block
+ * if ParExpression Statement [else Statement]
+ * for ( ForInitOpt ; [Expression] ; ForUpdateOpt ) Statement
+ * while ParExpression Statement
+ * do Statement while ParExpression ;
+ * try Block ( Catches | [Catches] finally Block )
+ * switch ParExpression { SwitchBlockStatementGroups }
+ * synchronized ParExpression Block
+ * return [Expression] ;
+ * throw Expression ;
+ * break [Identifier]
+ * continue [Identifier]
+ * ;
+ * ExpressionStatement
+ * Identifier : Statement
+ */
+void Statement():
+{
+}
+{
+    Block()
+    | <IF> <LPAREN> Expression() <RPAREN> Statement() [<ELSE> Statement() ]
+    | <WHILE> <LPAREN> Expression() <RPAREN> Statement()
+    | <DO> Statement() <WHILE> <LPAREN> Expression() <RPAREN> <SEMICOLON>
+    | <FOR> <LPAREN> [ForInit()] <SEMICOLON> [Expression()] <SEMICOLON> [ForUpdate()] <RPAREN> Statement()
+    | <SWITCH> <LPAREN> Expression() <RPAREN> <LBRACE> (SwitchGroup())* <RBRACE>
+    | <TRY> Block()
+        ((CatchClause())+ [<FINALLY> Block()]
+        | <FINALLY> Block()
+        )
+    | <RETURN> [Expression()] <SEMICOLON>
+    | <THROW> Expression() <SEMICOLON>
+    | <BREAK> [<IDENTIFIER>] <SEMICOLON>
+    | <CONTINUE> [<IDENTIFIER>] <SEMICOLON>
+    | <SYNCHRONIZED> <LPAREN> Expression() <RPAREN> Block()
+    | StatementExpression() <SEMICOLON>
+    | <SEMICOLON>
+}
+
+/* JLS2 ForInit:
+ * StatementExpression MoreStatementExpressions
+ * | [final] Type VariableDeclarators
+ */
+void ForInit():
+{
+}
+{
+    StatementExpressionList()
+    | LocalVariableDeclarationNoSemicolon()
+}
+
+void ForUpdate():
+{
+}
+{
+    StatementExpressionList()
+}
+
+void LocalVariableDeclarationNoSemicolon():
+{
+}
+{
+    Type() VariableDeclarators()
+}
+
+void StatementExpressionList():
+{
+}
+{
+    StatementExpression() (<COMMA> StatementExpression())*
+}
+
+/* JLS2 Catches:
+ * CatchClause {CatchClause}
+ * CatchClause:
+ * catch ( FormalParameter ) Block
+ * FormalParameter:
+ * [final] Type VariableDeclaratorId
+ */
+void CatchClause():
+{
+}
+{
+    <CATCH> <LPAREN> Type() <IDENTIFIER> <RPAREN> Block()
+}
+
+/* JLS2 SwitchBlockStatementGroups:
+ * { SwitchBlockStatementGroup }
+ * SwitchBlockStatementGroup:
+ * SwitchLabel BlockStatements
+ * SwitchLabel:
+ * case ConstantExpression :
+ * default :
+ */
+void SwitchGroup():
+{
+}
+{
+    (<CASE> Expression() <COLON> | <_DEFAULT> <COLON> )
+    (BlockStatement())*
+}
+
+
+
+//EXPRESSIONS
