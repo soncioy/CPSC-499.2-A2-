@@ -45,8 +45,7 @@ variableDeclarators
 // ============================================================================
 
 interfaceDeclaration
-    : INTERFACE identifier (EXTENDS typeList)?
-      interfaceBody
+    : INTERFACE identifier (EXTENDS typeList)? interfaceBody
     ;
 
 interfaceBody
@@ -155,9 +154,10 @@ switchLabel
     | DEFAULT COLON
     ;
 
-synchronizedStatement
-    : SYNCHRONIZED OPEN_PARENTHESIS expression CLOSE_PARENTHESIS block
-    ;
+// this is not in the jls sepcification
+//synchronizedStatement
+//    : SYNCHRONIZED OPEN_PARENTHESIS expression CLOSE_PARENTHESIS block
+//    ;
 
 
 catchClause
@@ -196,44 +196,58 @@ constantExpression
     ;
 
 expression1
-    : expression2 (expression1Rest)?
+    : expression2 expression1Rest?
     ;
 
+// expression1 had the following error message:
+// warning(154): JavaParser.g4:199:0: rule expression1 contains an optional block with at least one alternative that can match an empty string
+// to resolve this expression1Rest was modified
 expression1Rest
-    : (QUESTION expression COLON expression1)?
+    : QUESTION expression COLON expression1
     ;
+
+expression2
+    : expression3 expression2Rest?
+    ;
+
+expression2Rest
+    : (infixOp expression3)
+    | expression3 INSTANCEOF type
+    ;
+
 
 // The bottom of the ladder (Lowest Priority)
-expression2
-    : additiveExpression
-    | additiveExpression INSTANCEOF type
-    ;
+//expression2
+//    : additiveExpression
+//    | additiveExpression INSTANCEOF type
+//    ;
 //expression2Rest
 //    : (infixOp expression3)*
 //    | expression3 INSTANCEOF type
 //    ;
 
-//infixOp
-//    : DOUBLE_PIPE
-//    | DOUBLE_AMPERSAND
-//    | PIPE
-//    | CARET
-//    | AMPERSAND
-//    | DOUBLE_EQUALS
-//    | EXCLAMATION_EQUALS
-//    | LESS_THAN
-//    | GREATER_THAN
-//    | LESS_THAN_OR_EQUALS
-//    | GREATER_THAN_OR_EQUALS
-//    | DOUBLE_LESS_THAN
-//    | DOUBLE_GREATER_THAN
-//    | TRIPLE_GREATER_THAN
-//    | PLUS
-//    | MINUS
-//    | ASTERISK
-//    | SLASH
-//    | PERCENT
-//    ;
+infixOp
+    : DOUBLE_PIPE
+    | DOUBLE_AMPERSAND
+    | PIPE
+    | CARET
+    | AMPERSAND
+    | DOUBLE_EQUALS
+    | EXCLAMATION_EQUALS
+    | LESS_THAN
+    | GREATER_THAN
+    | LESS_THAN_OR_EQUALS
+    | GREATER_THAN_OR_EQUALS
+    | DOUBLE_LESS_THAN
+    | DOUBLE_GREATER_THAN
+    | TRIPLE_GREATER_THAN
+    | PLUS
+    | MINUS
+    | ASTERISK
+    | SLASH
+    | PERCENT
+    ;
+
 // Level 1: Addition and Subtraction
 additiveExpression
     : multiplicativeExpression ((PLUS | MINUS) multiplicativeExpression)*
@@ -275,6 +289,7 @@ primary
     | VOID PERIOD CLASS
     ;
 
+// not sure if this is correct - ask about this in class
 identifierSuffix
     : OPEN_BRACKET bracketsOpt PERIOD CLASS CLOSE_BRACKET
     | OPEN_BRACKET expression CLOSE_BRACKET
@@ -316,6 +331,7 @@ innerCreator
     : Identifier classCreatorRest
     ;
 
+// note sure if this is correct - double check
 arrayCreatorRest
     : OPEN_BRACKET CLOSE_BRACKET bracketsOpt arrayInitializer
     | OPEN_BRACKET expression CLOSE_BRACKET (OPEN_BRACKET expression CLOSE_BRACKET)* bracketsOpt
@@ -354,8 +370,7 @@ parExpression
 
 
 blockStatements
-    : blockStatement+
-    |
+    : blockStatement*
     ;
 
 localVariableDeclarationStatement
@@ -492,7 +507,7 @@ identifier:
     ;
 
 variableDeclaratorsRest
-    :VariableDeclaratorRest (COMMA variableDeclarator)*
+    :variableDeclaratorRest (COMMA variableDeclarator)*
     ;
 
 constantDeclaratorsRest
