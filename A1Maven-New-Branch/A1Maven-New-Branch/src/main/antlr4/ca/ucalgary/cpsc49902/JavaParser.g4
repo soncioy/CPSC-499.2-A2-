@@ -6,16 +6,11 @@ compilationUnit
     : (PACKAGE qualifiedIdentifier SEMICOLON)?
       importDeclaration*
       typeDeclaration*
+      EOF
     ;
 
 importDeclaration
-    : IMPORT qualifiedIdentifier (PERIOD ASTERISK)? SEMICOLON
-    ;
-
-typeDeclaration
-    : classDeclaration
-    | interfaceDeclaration
-    | SEMICOLON
+    : IMPORT identifier (PERIOD identifier)* (PERIOD ASTERISK)? SEMICOLON
     ;
 
 // ============================================================================
@@ -23,8 +18,10 @@ typeDeclaration
 // ============================================================================
 
 classDeclaration
-    : modifier* CLASS Identifier (EXTENDS qualifiedIdentifier)?
-      (IMPLEMENTS qualifiedIdentifierList)? classBody
+    : CLASS Identifier
+      (EXTENDS type)?
+      (IMPLEMENTS typeList)?
+      classBody
     ;
 
 classBody
@@ -32,57 +29,23 @@ classBody
     ;
 
 classBodyDeclaration
-    : modifier* memberDeclaration
+    : SEMICOLON
     | STATIC? block
-    | SEMICOLON
+    | modifiersOpt memberDecl
     ;
 
-memberDeclaration
-    : methodDeclaration
-    | fieldDeclaration
-    | classDeclaration
-    | interfaceDeclaration
-    ;
-
-methodDeclaration
-    : type methodDeclarator (THROWS qualifiedIdentifierList)? methodBody
-    | VOID methodDeclarator (THROWS qualifiedIdentifierList)? methodBody
-    ;
-
-methodDeclarator
-    : Identifier OPEN_PARENTHESIS formalParameterList? CLOSE_PARENTHESIS
-      bracketsOpt
-    ;
-
-methodBody
-    : block
-    | SEMICOLON
-    ;
-
-fieldDeclaration
-    : type variableDeclarators SEMICOLON
-    ;
 
 variableDeclarators
     : variableDeclarator (COMMA variableDeclarator)*
     ;
 
-variableDeclarator
-    : Identifier bracketsOpt (EQUALS variableInitializer)?
-    ;
-
-variableInitializer
-    : expression
-    | arrayInitializer
-    ;
 
 // ============================================================================
 // INTERFACE DECLARATIONS
 // ============================================================================
 
 interfaceDeclaration
-    : modifier* INTERFACE Identifier (EXTENDS qualifiedIdentifierList)?
-      interfaceBody
+    : INTERFACE identifier (EXTENDS typeList)? interfaceBody
     ;
 
 interfaceBody
@@ -90,41 +53,23 @@ interfaceBody
     ;
 
 interfaceBodyDeclaration
-    : modifier* interfaceMemberDeclaration
-    | SEMICOLON
+    : SEMICOLON
+    | modifiersOpt interfaceMemberDecl
     ;
 
-interfaceMemberDeclaration
-    : interfaceMethodDeclaration
-    | interfaceFieldDeclaration
-    | classDeclaration
-    | interfaceDeclaration
+interfaceMemberDecl
+    : interfaceMethodOrFieldDecl
+    | VOID identifier voidInterfaceMethodDeclaratorRest
+    | classOrInterfaceDeclaration
     ;
 
-interfaceMethodDeclaration
-    : type interfaceMethodDeclarator (THROWS qualifiedIdentifierList)? SEMICOLON
-    | VOID interfaceMethodDeclarator (THROWS qualifiedIdentifierList)? SEMICOLON
-    ;
-
-interfaceMethodDeclarator
-    : Identifier OPEN_PARENTHESIS formalParameterList? CLOSE_PARENTHESIS
-      bracketsOpt
-    ;
-
-interfaceFieldDeclaration
-    : type variableDeclarators SEMICOLON
-    ;
 
 // ============================================================================
 // FORMAL PARAMETERS
 // ============================================================================
 
-formalParameterList
-    : formalParameter (COMMA formalParameter)*
-    ;
-
 formalParameter
-    : FINAL? type Identifier bracketsOpt
+    : FINAL? type variableDeclaratorId
     ;
 
 // ============================================================================
@@ -145,13 +90,13 @@ modifier
     | STRICTFP
     ;
 
-// ============================================================================
-// TYPES
-// ============================================================================
+ //============================================================================
+ //TYPES
+ //============================================================================
 
 type
-    : qualifiedIdentifier bracketsOpt
-    | basicType bracketsOpt
+    : Identifier (PERIOD Identifier)* bracketsOpt
+    | basicType
     ;
 
 basicType
@@ -177,80 +122,31 @@ bracketsOpt
     : (OPEN_BRACKET CLOSE_BRACKET)*
     ;
 
-// ============================================================================
-// STATEMENTS
-// ============================================================================
+ //============================================================================
+ //STATEMENTS
+ //============================================================================
 
 block
-    : OPEN_BRACE blockStatement* CLOSE_BRACE
+    : OPEN_BRACE blockStatements CLOSE_BRACE
     ;
 
 blockStatement
-    : localVariableDeclaration SEMICOLON
-    | statement
-    | classDeclaration
-    ;
-
-localVariableDeclaration
-    : FINAL? type variableDeclarators
-    ;
-
-statement
-    : block
-    | ifStatement
-    | whileStatement
-    | doStatement
-    | forStatement
-    | switchStatement
-    | synchronizedStatement
-    | tryStatement
-    | throwStatement
-    | breakStatement
-    | continueStatement
-    | returnStatement
-    | labeledStatement
-    | expressionStatement
-    | emptyStatement
-    ;
-
-ifStatement
-    : IF OPEN_PARENTHESIS expression CLOSE_PARENTHESIS statement
-      (ELSE statement)?
-    ;
-
-whileStatement
-    : WHILE OPEN_PARENTHESIS expression CLOSE_PARENTHESIS statement
-    ;
-
-doStatement
-    : DO statement WHILE OPEN_PARENTHESIS expression CLOSE_PARENTHESIS SEMICOLON
-    ;
-
-forStatement
-    : FOR OPEN_PARENTHESIS forInit? SEMICOLON expression? SEMICOLON
-      forUpdate? CLOSE_PARENTHESIS statement
+    : localVariableDeclarationStatement
+    | classOrInterfaceDeclaration
+    | (Identifier COLON)? statement
     ;
 
 forInit
-    : localVariableDeclaration
-    | expressionList
+    : statementExpression moreStatementExpressions
+    | FINAL? type variableDeclarators
     ;
 
 forUpdate
-    : expressionList
-    ;
-
-expressionList
-    : expression (COMMA expression)*
-    ;
-
-switchStatement
-    : SWITCH OPEN_PARENTHESIS expression CLOSE_PARENTHESIS OPEN_BRACE
-      switchBlockStatementGroup* switchLabel* CLOSE_BRACE
+    : statementExpression moreStatementExpressions
     ;
 
 switchBlockStatementGroup
-    : switchLabel+ blockStatement*
+    : switchLabel blockStatements
     ;
 
 switchLabel
@@ -258,53 +154,19 @@ switchLabel
     | DEFAULT COLON
     ;
 
-synchronizedStatement
-    : SYNCHRONIZED OPEN_PARENTHESIS expression CLOSE_PARENTHESIS block
-    ;
+// this is not in the jls sepcification
+//synchronizedStatement
+//    : SYNCHRONIZED OPEN_PARENTHESIS expression CLOSE_PARENTHESIS block
+//    ;
 
-tryStatement
-    : TRY block (catchClause+ finallyBlock? | finallyBlock)
-    ;
 
 catchClause
     : CATCH OPEN_PARENTHESIS formalParameter CLOSE_PARENTHESIS block
     ;
 
-finallyBlock
-    : FINALLY block
-    ;
-
-throwStatement
-    : THROW expression SEMICOLON
-    ;
-
-breakStatement
-    : BREAK Identifier? SEMICOLON
-    ;
-
-continueStatement
-    : CONTINUE Identifier? SEMICOLON
-    ;
-
-returnStatement
-    : RETURN expression? SEMICOLON
-    ;
-
-labeledStatement
-    : Identifier COLON statement
-    ;
-
-expressionStatement
-    : statementExpression SEMICOLON
-    ;
-
-emptyStatement
-    : SEMICOLON
-    ;
-
-// ============================================================================
-// EXPRESSIONS
-// ============================================================================
+ //============================================================================
+ //EXPRESSIONS
+ //============================================================================
 
 expression
     : expression1 (assignmentOperator expression1)?
@@ -334,21 +196,35 @@ constantExpression
     ;
 
 expression1
-    : expression2 (expression1Rest)?
+    : expression2 expression1Rest?
     ;
 
+// expression1 had the following error message:
+// warning(154): JavaParser.g4:199:0: rule expression1 contains an optional block with at least one alternative that can match an empty string
+// to resolve this expression1Rest was modified
 expression1Rest
     : QUESTION expression COLON expression1
     ;
 
 expression2
-    : expression3 (expression2Rest)*
+    : expression3 expression2Rest?
     ;
 
 expression2Rest
-    : infixOp expression3
-    | INSTANCEOF type
+    : (infixOp expression3)
+    | expression3 INSTANCEOF type
     ;
+
+
+// The bottom of the ladder (Lowest Priority)
+//expression2
+//    : additiveExpression
+//    | additiveExpression INSTANCEOF type
+//    ;
+//expression2Rest
+//    : (infixOp expression3)*
+//    | expression3 INSTANCEOF type
+//    ;
 
 infixOp
     : DOUBLE_PIPE
@@ -370,6 +246,16 @@ infixOp
     | ASTERISK
     | SLASH
     | PERCENT
+    ;
+
+// Level 1: Addition and Subtraction
+additiveExpression
+    : multiplicativeExpression ((PLUS | MINUS) multiplicativeExpression)*
+    ;
+
+// Level 2: Multiplication, Division, and Remainder (Strongest)
+multiplicativeExpression
+    : expression3 ((ASTERISK | SLASH | PERCENT) expression3)*
     ;
 
 expression3
@@ -394,27 +280,30 @@ postfixOp
 
 primary
     : OPEN_PARENTHESIS expression CLOSE_PARENTHESIS
-    | THIS argumentsOpt
+    | THIS arguments?
     | SUPER superSuffix
     | literal
     | NEW creator
-    | qualifiedIdentifier (identifierSuffix)?
+    | Identifier (PERIOD Identifier)* identifierSuffix?
     | basicType bracketsOpt PERIOD CLASS
     | VOID PERIOD CLASS
     ;
 
+// not sure if this is correct - ask about this in class
 identifierSuffix
-    : OPEN_BRACKET (CLOSE_BRACKET bracketsOpt PERIOD CLASS
-                   | expression CLOSE_BRACKET)
+    : OPEN_BRACKET bracketsOpt PERIOD CLASS CLOSE_BRACKET
+    | OPEN_BRACKET expression CLOSE_BRACKET
     | arguments
-    | PERIOD (CLASS
-             | THIS
-             | SUPER arguments
-             | NEW innerCreator)
+    | PERIOD
+        ( CLASS
+        | THIS
+        | SUPER arguments
+        | NEW innerCreator
+        )
     ;
 
 selector
-    : PERIOD Identifier argumentsOpt
+    : PERIOD Identifier arguments?
     | PERIOD THIS
     | PERIOD SUPER superSuffix
     | PERIOD NEW innerCreator
@@ -423,7 +312,7 @@ selector
 
 superSuffix
     : arguments
-    | PERIOD Identifier argumentsOpt
+    | PERIOD Identifier arguments?
     ;
 
 argumentsOpt
@@ -442,10 +331,10 @@ innerCreator
     : Identifier classCreatorRest
     ;
 
+// note sure if this is correct - double check
 arrayCreatorRest
-    : OPEN_BRACKET (CLOSE_BRACKET bracketsOpt arrayInitializer
-                   | expression CLOSE_BRACKET (OPEN_BRACKET
-                     (expression)? CLOSE_BRACKET)* bracketsOpt)
+    : OPEN_BRACKET CLOSE_BRACKET bracketsOpt arrayInitializer
+    | OPEN_BRACKET expression CLOSE_BRACKET (OPEN_BRACKET expression CLOSE_BRACKET)* bracketsOpt
     ;
 
 classCreatorRest
@@ -465,3 +354,176 @@ literal
     | BooleanLiteral
     | NullLiteral
     ;
+
+// ================================================================
+// missing methods
+//
+
+variableInitializer
+    : arrayInitializer
+    | expression
+    ;
+
+parExpression
+    : OPEN_PARENTHESIS expression CLOSE_PARENTHESIS
+    ;
+
+
+blockStatements
+    : blockStatement*
+    ;
+
+localVariableDeclarationStatement
+    : FINAL? type variableDeclarators SEMICOLON
+    ;
+
+statement
+    : block
+    | IF parExpression statement (ELSE statement)?
+    | FOR OPEN_PARENTHESIS forInit SEMICOLON expression? SEMICOLON forUpdate CLOSE_PARENTHESIS statement
+    | WHILE parExpression statement
+    | DO statement WHILE parExpression SEMICOLON
+    | TRY block (catches | catches? FINALLY block)
+    | SWITCH parExpression OPEN_BRACE switchBlockStatementGroups CLOSE_BRACE
+    | SYNCHRONIZED parExpression block
+    | RETURN expression? SEMICOLON
+    | THROW expression SEMICOLON
+    | BREAK Identifier?
+    | CONTINUE Identifier?
+    | SEMICOLON
+//    | expressionStatement
+    | Identifier COLON statement
+    ;
+
+catches
+    : catchClause catchClause*
+    ;
+
+switchBlockStatementGroups
+    : switchBlockStatementGroup*
+    ;
+
+
+moreStatementExpressions
+    : (COMMA statementExpression)*
+    ;
+
+modifiersOpt
+    : modifier*
+    ;
+
+variableDeclaratorRest
+    : bracketsOpt (EQUALS variableInitializer)?
+    ;
+
+constantDeclaratorRest
+    : bracketsOpt EQUALS variableInitializer
+    ;
+
+variableDeclaratorId
+    : identifier bracketsOpt
+    ;
+
+typeDeclaration
+    : classOrInterfaceDeclaration
+    ;
+
+classOrInterfaceDeclaration
+    : modifiersOpt (classDeclaration | interfaceDeclaration)
+    ;
+
+
+typeList
+    : type (COMMA type)*
+    ;
+
+interfaceDeclartion
+    : INTERFACE Identifier
+      (EXTENDS typeList)?
+      interfaceBody
+    ;
+
+memberDecl:
+    methodOrFieldDecl
+    VOID identifier methodDeclaratorRest
+    identifier constructorDeclaratorRest
+    classOrInterfaceDeclaration
+    ;
+
+methodOrFieldDecl
+    : type identifier methodOrFieldRest
+    ;
+
+methodOrFieldRest
+    : variableDeclaratorRest
+    | methodDeclaratorRest
+    ;
+
+interfaceMethodOrFieldDecl
+    : type identifier interfaceMethodOrFieldRest
+    ;
+
+interfaceMethodOrFieldRest
+    : constantDeclaratorsRest SEMICOLON
+    | interfaceMethodDeclaratorRest
+    ;
+
+methodDeclaratorRest
+    : formalParameters bracketsOpt
+      (THROWS qualifiedIdentifierList)?
+      (methodBody | SEMICOLON)
+    ;
+
+voidMethodDeclaratorRest
+    : formalParameters
+      (THROWS qualifiedIdentifierList)?
+      (methodBody | SEMICOLON)
+    ;
+
+interfaceMethodDeclaratorRest
+    : formalParameters bracketsOpt
+      (THROWS qualifiedIdentifierList)?
+      SEMICOLON
+    ;
+
+voidInterfaceMethodDeclaratorRest
+    : formalParameters
+      (THROWS qualifiedIdentifierList)?
+      SEMICOLON
+    ;
+
+constructorDeclaratorRest
+    : formalParameters
+      (THROWS qualifiedIdentifierList)?
+      methodBody
+    ;
+
+formalParameters
+    : OPEN_PARENTHESIS (formalParameter (COMMA formalParameter)*)? CLOSE_PARENTHESIS
+    ;
+
+identifier:
+    Identifier
+    ;
+
+variableDeclaratorsRest
+    :variableDeclaratorRest (COMMA variableDeclarator)*
+    ;
+
+constantDeclaratorsRest
+    : constantDeclaratorRest (COMMA constantDeclarator)*
+    ;
+
+variableDeclarator
+    : identifier variableDeclaratorRest
+    ;
+
+constantDeclarator
+    : identifier constantDeclaratorRest
+    ;
+
+methodBody
+    : block
+    ;
+
+expressionList : expression (COMMA expression)* ;
