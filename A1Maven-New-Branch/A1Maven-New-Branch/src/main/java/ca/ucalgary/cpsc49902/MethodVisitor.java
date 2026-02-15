@@ -16,16 +16,43 @@ public class MethodVisitor implements Java12ParserVisitor {
         return s.replaceAll("\\s", "");
     }
 
+    private String getLeadingSpecials(Token t) {
+        if (t.specialToken == null) return "";
+
+        // 1. The specialToken field points to the *last* special token.
+        //    We must walk backwards to find the *first* one.
+        Token tmp = t.specialToken;
+        while (tmp.specialToken != null) {
+            tmp = tmp.specialToken;
+        }
+
+        // 2. Now walk forwards using .next until we hit the visible token
+        StringBuilder sb = new StringBuilder();
+        while (tmp != null && tmp != t) {
+            sb.append(tmp.image);
+            tmp = tmp.next;
+        }
+        return sb.toString();
+    }
+
     private String getFullText(Token first, Token last) {
-        // FIXED: Removed space between pipes
         if (first == null || last == null) return "";
         StringBuilder sb = new StringBuilder();
         Token t = first;
-        while (t!= last && t!= null) {
+
+        // Iterate through the visible tokens
+        while (t != null) {
+            // 1. Before appending the visible token, append its special tokens (comments)
+            sb.append(getLeadingSpecials(t));
+
+            // 2. Append the visible token
             sb.append(t.image);
+
+            // 3. Stop if we've reached the last token
+            if (t == last) break;
+
             t = t.next;
         }
-        if (t!= null) sb.append(t.image);
         return sb.toString();
     }
 
@@ -34,7 +61,9 @@ public class MethodVisitor implements Java12ParserVisitor {
         SimpleNode parent = (SimpleNode) node.jjtGetParent();
         Token first = parent.jjtGetFirstToken();
         Token last = node.jjtGetLastToken();
+
         String expression = getFullText(first, last);
+
         storage.add(new InvocationFile(clean(expression), fileName, first.beginLine, first.beginColumn));
         return node.childrenAccept(this, data);
     }

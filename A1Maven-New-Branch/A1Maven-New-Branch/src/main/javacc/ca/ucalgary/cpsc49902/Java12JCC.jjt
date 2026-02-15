@@ -368,13 +368,17 @@ TOKEN :
 
 Node CompilationUnit() : {}
 {
-
+  [ PackageDeclaration() ]
   ( ImportDeclaration() )*
-  ( LOOKAHEAD( (Modifier())* ( <CLASS> | <INTERFACE> ) ) TypeDeclaration() | <SEMICOLON> )*
+  (
+    LOOKAHEAD( (Modifier())* ( <CLASS> | <INTERFACE> ) )
+    TypeDeclaration()
+    |
+    <SEMICOLON>
+  )*
   <EOF>
-  { return jjtThis; } // This returns the generated AST root
+  { return jjtThis; }
 }
-
 /* NAMES & IDENTIFIERS */
 void Identifier(): {} { <IDENTIFIER> }
 void QualifiedIdentifier(): {} { <IDENTIFIER> ( LOOKAHEAD(2) <DOT> <IDENTIFIER> )* }

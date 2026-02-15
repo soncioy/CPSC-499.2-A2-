@@ -21,14 +21,34 @@ public class MethodFinderListener extends JavaParserBaseListener {
         int col = ctx.getStart().getCharPositionInLine() + 1;
         String text = clean(ctx.getText());
 
-        // Constructors: capture the full 'new Object()'
-        if (ctx.NEW()!= null && ctx.creator()!= null) {
+        // 1. Constructors (new)
+        if (ctx.NEW() != null && ctx.creator() != null) {
             if (text.contains("{")) text = text.substring(0, text.indexOf("{"));
             storage.add(new InvocationFile(text, fileName, line, col));
         }
-        // Method calls in Primary: 'this()' or 'super()'
-        else if ((ctx.THIS()!= null || ctx.SUPER()!= null) && ctx.arguments()!= null) {
+        // 2. Standard calls (identifier(...) or identifier.suffix(...))
+        else if (ctx.Identifier() != null && ctx.identifierSuffix() != null && ctx.identifierSuffix().arguments() != null) {
             storage.add(new InvocationFile(text, fileName, line, col));
+        }
+        // 3. 'this' calls (this(...))
+        else if (ctx.THIS() != null && ctx.arguments() != null) {
+            storage.add(new InvocationFile(text, fileName, line, col));
+        }
+        // 4. 'super' calls (super(...) or super.method(...))
+        else if (ctx.SUPER() != null && ctx.superSuffix() != null) {
+            // superSuffix can be: arguments | PERIOD Identifier arguments?
+            boolean isCall = false;
+
+            // Case: super(args)
+            if (ctx.superSuffix().arguments() != null) isCall = true;
+
+            // Case: super.method(args) - arguments is technically optional in grammar but required for invocation
+            // Note: You might need to check if argumentsOpt is present depending on your specific grammar rule for superSuffix
+            if (ctx.superSuffix().Identifier() != null && text.contains("(")) isCall = true;
+
+            if (isCall) {
+                storage.add(new InvocationFile(text, fileName, line, col));
+            }
         }
     }
 
