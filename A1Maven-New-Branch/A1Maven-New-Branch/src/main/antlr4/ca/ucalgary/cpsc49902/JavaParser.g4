@@ -25,19 +25,36 @@ classOrInterfaceDeclaration
     ;
 
 classDeclaration
-    : CLASS Identifier (EXTENDS type)? (IMPLEMENTS typeList)? classBody
+    : CLASS Identifier
+      (EXTENDS qualifiedIdentifier)?
+      (IMPLEMENTS qualifiedIdentifier (COMMA qualifiedIdentifier)*)?
+      classBody
     ;
 
 interfaceDeclaration
-    : INTERFACE Identifier (EXTENDS typeList)? interfaceBody
-    ;
-
-typeList
-    : type (COMMA type)*
+    : INTERFACE Identifier
+      (EXTENDS qualifiedIdentifier (COMMA qualifiedIdentifier)*)?
+      interfaceBody
     ;
 
 classBody
     : OPEN_BRACE classBodyDeclaration* CLOSE_BRACE
+    ;
+
+anonymousClassBody
+    : OPEN_BRACE anonymousClassBodyDeclaration* CLOSE_BRACE
+    ;
+
+anonymousClassBodyDeclaration
+    : SEMICOLON
+    | STATIC? block
+    | modifiers anonymousMemberDecl
+    ;
+
+anonymousMemberDecl
+    : methodOrFieldDecl
+    | VOID Identifier voidMethodDeclaratorRest
+    | classOrInterfaceDeclaration
     ;
 
 interfaceBody
@@ -52,7 +69,7 @@ classBodyDeclaration
 
 memberDecl
     : methodOrFieldDecl
-    | VOID Identifier methodDeclaratorRest
+    | VOID Identifier voidMethodDeclaratorRest
     | Identifier constructorDeclaratorRest
     | classOrInterfaceDeclaration
     ;
@@ -62,13 +79,13 @@ methodOrFieldDecl
     ;
 
 methodOrFieldRest
-    : methodDeclaratorRest                                          // Method
-    | variableDeclaratorRest (COMMA variableDeclarator)* SEMICOLON  // Fields
+    : methodDeclaratorRest
+    | variableDeclaratorRest (COMMA variableDeclarator)* SEMICOLON
     ;
 
 interfaceBodyDeclaration
     : SEMICOLON
-    | modifiers interfaceMemberDecl
+    | interfaceModifiers interfaceMemberDecl
     ;
 
 interfaceMemberDecl
@@ -113,7 +130,7 @@ constructorBody
 explicitConstructorInvocation
     : THIS OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS SEMICOLON
     | SUPER OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS SEMICOLON
-    | primary PERIOD SUPER OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS SEMICOLON
+    | qualifiedIdentifier PERIOD SUPER OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS SEMICOLON
     ;
 
 qualifiedIdentifierList
@@ -125,7 +142,7 @@ formalParameters
     ;
 
 formalParameter
-    : FINAL? type variableDeclaratorId
+    : type variableDeclaratorId
     ;
 
 methodBody
@@ -169,8 +186,19 @@ arrayInitializer
     : OPEN_BRACE (variableInitializer (COMMA variableInitializer)*)? COMMA? CLOSE_BRACE
     ;
 
+accessModifier
+    : PUBLIC
+    | PROTECTED
+    | PRIVATE
+    ;
+
 modifiers
-    : (PUBLIC | PROTECTED | PRIVATE | STATIC | ABSTRACT | FINAL | NATIVE | SYNCHRONIZED | TRANSIENT | VOLATILE | STRICTFP)*
+    : accessModifier?
+      (STATIC | ABSTRACT | FINAL | NATIVE | SYNCHRONIZED | TRANSIENT | VOLATILE | STRICTFP)*
+    ;
+
+interfaceModifiers
+    : (PUBLIC | ABSTRACT)*
     ;
 
 type
@@ -195,7 +223,7 @@ block
 
 blockStatement
     : localVariableDeclarationStatement
-    | classOrInterfaceDeclaration
+    | modifiers classDeclaration
     | Identifier COLON statement
     | statement
     ;
@@ -240,8 +268,8 @@ switchLabel
     ;
 
 forInit
-    : statementExpressionList
-    | FINAL? type variableDeclarators
+    : FINAL? type variableDeclarators
+    | statementExpressionList
     ;
 
 forUpdate
@@ -260,8 +288,7 @@ statementExpression
     : preIncrementExpression
     | preDecrementExpression
     | primary assignmentOperator assignmentExpression
-    | primary postfixOp*
-    | classInstanceCreationExpression
+    | primary postfixOp?
     ;
 
 expression
@@ -285,15 +312,6 @@ assignmentOperator
     | DOUBLE_LESS_THAN_EQUALS
     | DOUBLE_GREATER_THAN_EQUALS
     | TRIPLE_GREATER_THAN_EQUALS
-    ;
-
-assignment
-    : leftHandSide assignmentOperator assignmentExpression
-    ;
-
-leftHandSide
-    : qualifiedIdentifier
-    | primary
     ;
 
 conditionalExpression
@@ -377,7 +395,7 @@ unaryExpressionNotPlusMinus
     ;
 
 postfixExpression
-    : primary postfixOp*
+    : primary postfixOp?
     ;
 
 postfixOp
@@ -396,35 +414,68 @@ primary
 
 primaryPrefix
     : literal
-    | PERIOD IntegerLiteral Identifier?                     // adding this for .5, .5f
     | THIS
     | SUPER
     | OPEN_PARENTHESIS expression CLOSE_PARENTHESIS
-    | Identifier
-    | qualifiedIdentifier PERIOD THIS
-    | NEW qualifiedIdentifier OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS classBody?
-    | arrayCreationExpression
     | primitiveType bracketsOpt PERIOD CLASS
     | VOID PERIOD CLASS
+    | constructorInvocation
+    | arrayCreationExpression
+    | qualifiedIdentifier bracketsOpt PERIOD CLASS
+    | Identifier
+    ;
+
+constructorInvocation
+    : NEW qualifiedIdentifier OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS anonymousClassBody?
     ;
 
 primarySuffix
-    : PERIOD Identifier (OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS)?
-    | PERIOD CLASS
+    : methodCall
+    | fieldAccess
+    | superMethodCall
+    | superFieldAccess
+    | qualifiedNew
+    | arrayAccess
+    | unqualifiedCall
+    | classLiteralSuffix
+    | thisSuffix
+    ;
+
+methodCall
+    : PERIOD Identifier OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS
+    ;
+
+fieldAccess
+    : PERIOD Identifier
+    ;
+
+superMethodCall
+    : PERIOD SUPER PERIOD Identifier OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS
+    ;
+
+superFieldAccess
+    : PERIOD SUPER PERIOD Identifier
+    ;
+
+qualifiedNew
+    : PERIOD NEW Identifier OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS anonymousClassBody?
+    ;
+
+arrayAccess
+    : OPEN_BRACKET expression CLOSE_BRACKET
+    ;
+
+unqualifiedCall
+    : OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS
+    ;
+
+classLiteralSuffix
+    : PERIOD CLASS
     | OPEN_BRACKET CLOSE_BRACKET bracketsOpt PERIOD CLASS
-    | PERIOD THIS
-    | PERIOD SUPER PERIOD Identifier (OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS)?
-    | PERIOD NEW Identifier OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS classBody?
-    | OPEN_BRACKET expression CLOSE_BRACKET
-    | OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS
     ;
 
-classInstanceCreationExpression
-    : NEW qualifiedIdentifier OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS classBody?
-    ;
-
-classCreatorRest
-    : OPEN_PARENTHESIS argumentList? CLOSE_PARENTHESIS classBody?
+thisSuffix
+    : PERIOD THIS
     ;
 
 argumentList
@@ -438,17 +489,16 @@ arrayCreationExpression
 
 arrayCreatorRest
     : OPEN_BRACKET CLOSE_BRACKET bracketsOpt arrayInitializer
-    | (OPEN_BRACKET expression CLOSE_BRACKET)+ bracketsOpt
+    | OPEN_BRACKET expression CLOSE_BRACKET (OPEN_BRACKET expression CLOSE_BRACKET)* bracketsOpt
     ;
 
 qualifiedIdentifier
     : Identifier (PERIOD Identifier)*
     ;
 
-// updated to deal with different types i.e. hexadecimal, octal
 literal
-    : IntegerLiteral Identifier?
-    | FloatingPointLiteral Identifier?
+    : IntegerLiteral
+    | FloatingPointLiteral
     | CharacterLiteral
     | StringLiteral
     | BooleanLiteral
