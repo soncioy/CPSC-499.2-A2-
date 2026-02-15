@@ -12,3 +12,5 @@ public class UnicodeIdentifierTest {
         \u0061(); // Calling method 'a'
     }
 }
+// EXPECTED: .println("Unicodemethodname"): file UnicodeIdentifierTest.java, line 7, column 19
+// EXPECTED: \u0061(): file UnicodeIdentifierTest.java, line 12, column 9

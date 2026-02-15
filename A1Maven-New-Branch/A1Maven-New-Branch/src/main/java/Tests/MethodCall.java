@@ -14,3 +14,6 @@ public class MethodCall {
     void foo(int a, int b) {}
     void bar() {}
 }
+// EXPECTED: .println("Hello"): file MethodCall.java, line 6, column 19
+// EXPECTED: foo(1,2): file MethodCall.java, line 8, column 9
+// EXPECTED: .bar(): file MethodCall.java, line 9, column 13

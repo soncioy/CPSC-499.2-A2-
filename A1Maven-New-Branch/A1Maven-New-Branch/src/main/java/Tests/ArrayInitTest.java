@@ -18,3 +18,4 @@ public class ArrayInitTest {
         Object c = a.clone();
     }
 }
+// EXPECTED: .clone(): file ArrayInitTest.java, line 19, column 22

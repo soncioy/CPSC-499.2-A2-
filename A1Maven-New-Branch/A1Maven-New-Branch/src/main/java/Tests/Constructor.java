@@ -8,3 +8,5 @@ public class Constructor {
         Vector v = new Vector(10);
     }
 }
+// EXPECTED: newObject(): file Constructor.java, line 7, column 20
+// EXPECTED: newVector(10): file Constructor.java, line 8, column 20

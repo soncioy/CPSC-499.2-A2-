@@ -12,3 +12,4 @@ public class ValidAssertIdentifier {
 
     void doSomething(int a, int b) {}
 }
+// EXPECTED: doSomething(assert,enum): file ValidAssertIdentifier.java, line 10, column 9

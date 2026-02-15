@@ -22,3 +22,6 @@ public class SuperThisCallTest extends Parent {
         super.toString();
     }
 }
+// EXPECTED: this(10): file SuperThisCallTest.java, line 13, column 9
+// EXPECTED: super(i): file SuperThisCallTest.java, line 18, column 9
+// EXPECTED: super.toString(): file SuperThisCallTest.java, line 23, column 9

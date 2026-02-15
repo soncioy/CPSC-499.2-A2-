@@ -9,3 +9,6 @@ public class ComplexArgs {
     int getX() { return 0; }
     int getY() { return 0; }
 }
+// EXPECTED: .max(getX(),getY()): file ComplexArgs.java, line 5, column 13
+// EXPECTED: getX(): file ComplexArgs.java, line 5, column 19
+// EXPECTED: getY(): file ComplexArgs.java, line 5, column 27

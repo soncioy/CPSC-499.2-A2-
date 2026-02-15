@@ -14,3 +14,7 @@ public class AnonymousClassTest {
         System.out.println(o.toString());
     }
 }
+// EXPECTED: newObject(): file AnonymousClassTest.java, line 7, column 20
+// EXPECTED: super.toString(): file AnonymousClassTest.java, line 9, column 24
+// EXPECTED: .println(o.toString()): file AnonymousClassTest.java, line 14, column 19
+// EXPECTED: .toString(): file AnonymousClassTest.java, line 14, column 30

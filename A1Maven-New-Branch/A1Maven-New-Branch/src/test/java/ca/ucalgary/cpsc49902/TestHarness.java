@@ -1,130 +1,119 @@
 package ca.ucalgary.cpsc49902;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.Path;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class TestHarness {
 
-    private static final String INPUT_DIR = System.getProperty("user.dir") +
-            File.separator + "src" +
-            File.separator + "main" +
-            File.separator + "java" +
-            File.separator + "Tests" +
-            File.separator;
+    private static final String INPUT_DIR = "src/main/java/Tests";
 
-    private static final String EXPECTED_DIR = System.getProperty("user.dir") +
-            File.separator + "src" +
-            File.separator + "main" +
-            File.separator + "java" +
-            File.separator + "ExpectedOutput" +
-            File.separator;
+    static Stream<File> testFilesProvider() {
+        File testDir = new File(System.getProperty("user.dir") + File.separator + INPUT_DIR);
+        File[] files = testDir.listFiles((dir, name) -> name.endsWith(".java"));
+        return files == null ? Stream.empty() : Stream.of(files);
+    }
 
-    /**
-     * Test A: Validates "Good" files.
-     * 1. Prints Raw Output.
-     * 2. Checks Token Count against file.
-     * 3. Checks Logic Parity.
-     */
-    @ParameterizedTest
-    @ValueSource(strings = {"GoodTest.java", "OperatorsTest.java", "LiteralsTest.java"})
-    public void testValidJava12Output(String filename) {
-        String inputPath = INPUT_DIR + filename;
-        String txtFileName = filename + ".txt";
-        String txtPath = EXPECTED_DIR + txtFileName;
+    @ParameterizedTest(name = "{index} ==> {0}")
+    @MethodSource("testFilesProvider")
+    void runDynamicTest(File file) {
+        System.out.println("\n################################################################");
+        System.out.println(" TESTING: " + file.getName());
+        System.out.println("################################################################");
 
-        System.out.println("----- TESTING: " + filename + " -----");
+        // 1. EXTRACT EXPECTED OUPUT
+        List<String> expectedLines = extractExpectedOutput(file);
+        boolean expectSyntaxError = expectedLines.contains("SYNTAX_ERROR");
 
-        List<Invocation> antlrResults = AnalysisTool.runAnalysis(inputPath);            // Run the tool
+        System.out.println("Expected (" + expectedLines.size() + " items):");
+        expectedLines.forEach(s -> System.out.println("   " + s));
 
-        String actualAntlr = formatForTest(antlrResults);
+        // 2. RUN ANTLR & PRINT ACTUAL OUTPUT
+        System.out.println("\n----------------- [ANTLR Results] -----------------");
+        List<InvocationFile> antlrResults = AnalysisTool.runAnalysis(file.getAbsolutePath());
+        List<String> antlrStrings = formatResults(antlrResults);
 
-        // JavaCC is a placeholder for now
-        String actualJavaCC = "0 method/constructor invocation(s) found in the input file(s)";
+        if (antlrStrings.isEmpty()) System.out.println("   (No invocations found)");
+        else antlrStrings.forEach(s -> System.out.println("   " + s));
 
-        // 3. VALIDATION
+        // 3. RUN JAVACC & PRINT ACTUAL OUTPUT
+        System.out.println("\n----------------- [JavaCC Results] ----------------");
+        List<InvocationFile> javaccResults = AnalysisTool.runJavaCCAnalysis(file.getAbsolutePath());
+        List<String> javaccStrings = formatResults(javaccResults);
+
+        if (javaccStrings.isEmpty()) System.out.println("   (No invocations found)");
+        else javaccStrings.forEach(s -> System.out.println("   " + s));
+
+        System.out.println("\n----------------- [VERIFICATION] ------------------");
+
+        // 4. ASSERTIONS (This happens last, so you see the logs above even if it fails)
+
+        // CASE A: We expect the file to fail (Syntax Error)
+        if (expectSyntaxError) {
+            boolean antlrPassed = antlrResults.isEmpty(); // Passed if it found nothing (rejected)
+            boolean javaccPassed = javaccResults.isEmpty();
+
+            if (!antlrPassed) System.out.println(" ANTLR failed to reject invalid syntax!");
+            if (!javaccPassed) System.out.println(" JavaCC failed to reject invalid syntax!");
+
+            Assertions.assertTrue(antlrPassed, "ANTLR should have rejected " + file.getName());
+            Assertions.assertTrue(javaccPassed, "JavaCC should have rejected " + file.getName());
+            return;
+        }
+
+        // CASE B: Valid File
+        // Verify ANTLR
         try {
-            File checkFile = new File(txtPath);
-            if (!checkFile.exists()) {
-                fail("MISSING FILE: Could not find " + txtFileName + " in " + EXPECTED_DIR);
-            }
+            assertListsMatch(expectedLines, antlrStrings);
+            System.out.println(" ANTLR: PASSED");
+        } catch (AssertionError e) {
+            System.out.println(" ANTLR: FAILED");
+            throw e; // Rethrow to fail the test in JUnit
+        }
 
-            // Read the expected output from the file
-            String expectedOutput = Files.readString(Paths.get(txtPath)).trim();
-
-            // Normalize line endings (Windows/Mac/Linux compatibility), i think this was mentioned by the prof in a lecture.
-            expectedOutput = expectedOutput.replace("\r\n", "\n");
-            actualAntlr = actualAntlr.replace("\r\n", "\n");
-
-            // Check Token/Invocation Counts
-            String expectedCount = expectedOutput.split(" ")[0];
-            String actualCount = actualAntlr.split(" ")[0];
-
-            System.out.println("Expected Count: " + expectedCount);
-            System.out.println("Actual Count:   " + actualCount);
-
-            assertEquals(expectedCount, actualCount, "Count mismatch for " + filename);
-
-            // Check Logic Parity
-            // We skip exact content match for Unicode/Literals if the formatting varies slightly
-            if (!filename.equals("UnicodeTest.java") && !filename.equals("LiteralsTest.java")) {
-                assertEquals(expectedOutput, actualAntlr, "Full output mismatch for " + filename);
-            } else {
-                System.out.println("[WARN] Skipping exact string match for " + filename + " (known formatting differences)");
-            }
-
-            System.out.println("[PASS] " + filename);
-
-        } catch (java.io.IOException e) {
-            fail("Error reading expected output file: " + txtPath);
+        // Verify JavaCC
+        try {
+            assertListsMatch(expectedLines, javaccStrings);
+            System.out.println(" JavaCC: PASSED");
+        } catch (AssertionError e) {
+            System.out.println(" JavaCC: FAILED");
+            throw e;
         }
     }
 
-    /**
-     * Test B: Validates "Bad" files (Error Handling).
-     * NOTE: This test might fail if AnalysisTool suppresses errors.
-     * Ensure AnalysisTool throws RuntimeException on syntax error for this to work.
-     */
-    @ParameterizedTest
-    @ValueSource(strings = {"BadLambda.java", "BadTextBlock.java", "BadAnnotation.java", "BadVarargs.java"})
-    public void testInvalidJava12Files(String filename) {
-        String path = INPUT_DIR + filename;
+    // --- Helpers ---
 
-        System.out.println("----- TESTING BAD FILE: " + filename + " -----");
-
-        try {
-            AnalysisTool.runAnalysis(path);
-            // If we get here, the parser accepted the bad code -> FAIL
-            fail("ANTLR should have rejected " + filename);
-        } catch (RuntimeException e) {
-            // If we catch an exception, the parser correctly rejected the bad code -> PASS
-            System.out.println("[PASS] Rejected " + filename + " with error: " + e.getMessage());
-        }
+    private List<String> formatResults(List<InvocationFile> invs) {
+        List<String> strings = new ArrayList<>();
+        for (InvocationFile i : invs) strings.add(i.toString());
+        Collections.sort(strings);
+        return strings;
     }
 
-    /**
-     * HELPER: Formats the List<Invocation> into the exact String format
-     * expected by your assignment's .txt files.
-     */
-    private String formatForTest(List<Invocation> list) {
-        StringBuilder sb = new StringBuilder();
+    private void assertListsMatch(List<String> expected, List<String> actual) {
+        Collections.sort(expected);
+        // Actual is already sorted
+        Assertions.assertEquals(expected, actual);
+    }
 
-        // Header: "X method/constructor invocation(s)..."
-        sb.append(list.size()).append(" method/constructor invocation(s) found in the input file(s)\n");
-
-        // Body: The invocations
-        for (Invocation i : list) {
-            sb.append(i.toString()).append("\n");
-        }
-
-        return sb.toString().trim();
+    private List<String> extractExpectedOutput(File file) {
+        List<String> expected = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().startsWith("// EXPECTED:")) {
+                    expected.add(line.trim().substring(12).trim());
+                }
+            }
+        } catch (Exception e) { throw new RuntimeException(e); }
+        return expected;
     }
 }
-
-

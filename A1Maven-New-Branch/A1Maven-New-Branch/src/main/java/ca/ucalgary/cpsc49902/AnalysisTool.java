@@ -1,61 +1,71 @@
 package ca.ucalgary.cpsc49902;
 
+import ca.ucalgary.cpsc49902.javacc.Java12Parser;
+import ca.ucalgary.cpsc49902.javacc.Node;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
-import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AnalysisTool {
 
-    // Store ALL findings from ALL files here
-    private static final List<Invocation> allInvocations = new ArrayList<>();
-
+    // FIXED: Added to String array. Mandatory for.length and foreach loops.
     public static void main(String[] args) {
-        // Parse every file provided in args
-        for (String path : args) {
-            // Add the results from this file to the big list
-            allInvocations.addAll(runAnalysis(path));
-
-            // runJavaCCAnalysis(path); // Uncomment when JavaCC is done
+        if (args.length == 0) {
+            System.out.println("Usage: java AnalysisTool <file1> <file2>...");
+            return;
         }
 
-        // print summary header
-        // Format: <#> method/constructor invocation(s) found in the input file(s)
-        System.out.println(allInvocations.size() + " method/constructor invocation(s) found in the input file(s)");
+        List<InvocationFile> allInvocationFiles = new ArrayList<>();
 
-        // print details
-        for (Invocation invocation : allInvocations) {
-            System.out.println(invocation.toString());
+        for (String path : args) {
+            // Change this to runJavaCCAnalysis to test your JavaCC implementation
+            allInvocationFiles.addAll(runAnalysis(path));
+        }
+
+        System.out.println(allInvocationFiles.size() + " method/constructor invocation(s) found in the input file(s)");
+
+        for (InvocationFile inv : allInvocationFiles) {
+            System.out.println(inv.toString());
         }
     }
 
-    // Changed to 'public' and returns 'List' so TestHarness can check it
-    public static List<Invocation> runAnalysis(String path) {
-        List<Invocation> fileInvocations = new ArrayList<>();
-
+    public static List<InvocationFile> runAnalysis(String path) {
+        List<InvocationFile> invocationFiles = new ArrayList<>();
         try {
             JavaLexer lexer = new JavaLexer(CharStreams.fromPath(Paths.get(path)));
-            // Remove console error listeners to keep output clean if there are syntax errors
             lexer.removeErrorListeners();
-
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             JavaParser parser = new JavaParser(tokens);
             parser.removeErrorListeners();
-
             ParseTree tree = parser.compilationUnit();
 
-            // Pass the local list 'fileInvocations' to the listener
-            MethodFinderListener finder = new MethodFinderListener(path, fileInvocations);
+            MethodFinderListener finder = new MethodFinderListener(path, invocationFiles);
             ParseTreeWalker walker = new ParseTreeWalker();
             walker.walk(finder, tree);
+        } catch (Exception e) {}
+        return invocationFiles;
+    }
 
-        } catch (IOException e) {
-            // Keep errors explicitly separate from standard output
-            System.err.println("Error reading file: " + path);
+    public static List<InvocationFile> runJavaCCAnalysis(String path) {
+        List<InvocationFile> invocationFiles = new ArrayList<>();
+        try {
+            Java12Parser.resetInvocations();
+            Java12Parser.setFileName(new java.io.File(path).getName());
+
+            java.io.FileInputStream fis = new java.io.FileInputStream(path);
+            Java12Parser parser = new Java12Parser(fis);
+
+            Node root = parser.CompilationUnit();
+
+            MethodVisitor visitor = new MethodVisitor(path, invocationFiles);
+            root.jjtAccept(visitor, null);
+
+            return invocationFiles;
+        } catch (Throwable e) {
+            System.err.println("!!! JAVACC CRASH on " + path + ": " + e.getMessage());
+            return new ArrayList<>();
         }
-
-        return fileInvocations;
     }
 }

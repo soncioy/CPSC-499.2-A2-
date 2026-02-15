@@ -8,3 +8,4 @@ public class BadGenerics {
         Vector<String> v = new Vector<String>();
     }
 }
+// EXPECTED: SYNTAX_ERROR

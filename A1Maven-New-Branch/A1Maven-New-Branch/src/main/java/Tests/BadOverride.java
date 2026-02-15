@@ -8,3 +8,4 @@ public class BadOverride {
         return "bad";
     }
 }
+// EXPECTED: SYNTAX_ERROR

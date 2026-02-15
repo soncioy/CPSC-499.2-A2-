@@ -6,3 +6,4 @@ public class BadVarargs {
 
     }
 }
+// EXPECTED: SYNTAX_ERROR

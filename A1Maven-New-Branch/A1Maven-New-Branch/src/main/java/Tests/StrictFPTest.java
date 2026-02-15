@@ -9,3 +9,4 @@ public strictfp class StrictFPTest {
         System.out.println(d);
     }
 }
+// EXPECTED: System.out.println(d): file StrictFPTest.java, line 8, column 9

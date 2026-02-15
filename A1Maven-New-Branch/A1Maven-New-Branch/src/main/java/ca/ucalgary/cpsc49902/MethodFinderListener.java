@@ -1,42 +1,58 @@
 package ca.ucalgary.cpsc49902;
+
 import java.util.List;
-// Extending the BaseListener that ANTLR generates.
-// Since this class doesn't exist yet, I will just comment out the "extends" part
+
 public class MethodFinderListener extends JavaParserBaseListener {
-
     private final String fileName;
-    private final List<Invocation> storage;
+    private final List<InvocationFile> storage;
 
-    public MethodFinderListener(String fileName, List<Invocation> storage) {
+    public MethodFinderListener(String fileName, List<InvocationFile> storage) {
         this.fileName = fileName;
         this.storage = storage;
     }
 
-    // Uncomment and use this once the Grammar (Yousri's branch) has #MethodCall labels
-    /*
-    @Override
-    public void enterMethodCall(JavaParser.MethodCallContext ctx) {
-        // 1. Capture the exact text (e.g., "a.foo(42)")
-        // This satisfies the requirement to "show the target object" (the 'a.')
-        String text = ctx.getText();
-
-        // 2. Capture location
-        int line = ctx.getStart().getLine();
-        int col = ctx.getStart().getCharPositionInLine() + 1; // ANTLR is 0-indexed, editors are 1-indexed
-
-        // 3. Store it
-        storage.add(new InvocationInfo(text, fileName, line, col));
+    private String clean(String s) {
+        return s.replaceAll("\\s", "");
     }
-    */
 
-    // Uncomment for Constructors (new ArrayList())
-    /*
     @Override
-    public void enterCreator(JavaParser.CreatorContext ctx) {
-        String text = ctx.getText();
+    public void enterPrimary(JavaParser.PrimaryContext ctx) {
         int line = ctx.getStart().getLine();
         int col = ctx.getStart().getCharPositionInLine() + 1;
-        storage.add(new InvocationInfo(text, fileName, line, col));
+        String text = clean(ctx.getText());
+
+        // Constructors: capture the full 'new Object()'
+        if (ctx.NEW()!= null && ctx.creator()!= null) {
+            if (text.contains("{")) text = text.substring(0, text.indexOf("{"));
+            storage.add(new InvocationFile(text, fileName, line, col));
+        }
+        // Method calls in Primary: 'this()' or 'super()'
+        else if ((ctx.THIS()!= null || ctx.SUPER()!= null) && ctx.arguments()!= null) {
+            storage.add(new InvocationFile(text, fileName, line, col));
+        }
     }
-    */
+
+    @Override
+    public void enterExpression3(JavaParser.Expression3Context ctx) {
+        // chained calls like 'a.foo()'
+        // If a child selector has arguments, then the whole Expression3 is the call.
+        if (ctx.selector()!= null &&!ctx.selector().isEmpty()) {
+            for (JavaParser.SelectorContext sCtx : ctx.selector()) {
+                if (sCtx.arguments()!= null) {
+                    int line = ctx.getStart().getLine();
+                    int col = ctx.getStart().getCharPositionInLine() + 1;
+
+                    // We take the text from the start of expression3 up to the end of this selector
+                    // to accurately reflect 'a.foo()' or 'a.foo().bar()'
+                    String fullText = clean(ctx.getStart().getInputStream().getText(
+                            new org.antlr.v4.runtime.misc.Interval(
+                                    ctx.getStart().getStartIndex(),
+                                    sCtx.getStop().getStopIndex()
+                            )
+                    ));
+                    storage.add(new InvocationFile(fullText, fileName, line, col));
+                }
+            }
+        }
+    }
 }
