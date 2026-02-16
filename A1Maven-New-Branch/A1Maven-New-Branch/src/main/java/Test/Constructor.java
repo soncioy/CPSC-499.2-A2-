@@ -1,16 +1,16 @@
 package Test;
 
-class ConstructorTest {
+class Constructor {
     // Default constructor - OK
-    ConstructorTest() { }
+    Constructor() { }
 
     // Constructor with this() - WILL FAIL
-    ConstructorTest(int x) {
+    Constructor(int x) {
         this();  // ERROR: Cannot parse explicit constructor invocation
     }
 
     // Constructor with super() - WILL FAIL
-    ConstructorTest(String s) {
+    Constructor(String s) {
         super();  // ERROR: Cannot parse explicit constructor invocation
     }
 }
