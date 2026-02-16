@@ -32,6 +32,7 @@
 
     <build>
         <plugins>
+            <!-- ANTLR 4 grammar generation -->
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
@@ -45,6 +46,7 @@
                 </executions>
             </plugin>
 
+            <!-- JavaCC grammar generation -->
             <plugin>
                 <groupId>com.helger.maven</groupId>
                 <artifactId>ph-javacc-maven-plugin</artifactId>
@@ -64,6 +66,7 @@
                 </executions>
             </plugin>
 
+            <!-- Register generated source directories -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
@@ -84,13 +87,64 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
                 <configuration>
                     <source>21</source>
                     <target>21</target>
                 </configuration>
+            </plugin>
+
+            <!-- JaCoCo — code coverage via EclEmma -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.11</version>
+                <executions>
+                    <!-- Instruments the JVM before tests run -->
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <!-- Generates the HTML report after tests complete -->
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- Exclude ANTLR and JavaCC generated files from the report.
+                         These are not code you wrote — covering them inflates
+                         the numbers and clutters the report. -->
+                    <excludes>
+                        <exclude>ca/ucalgary/cpsc49902/JavaLexer.class</exclude>
+                        <exclude>ca/ucalgary/cpsc49902/JavaParser*.class</exclude>
+                        <exclude>ca/ucalgary/cpsc49902/JavaParserBaseListener.class</exclude>
+                        <exclude>ca/ucalgary/cpsc49902/JavaParserListener.class</exclude>
+                        <!-- Exclude JavaCC generated files -->
+                        <exclude>ca/ucalgary/cpsc49902/JavaCCParser*.class</exclude>
+                        <exclude>ca/ucalgary/cpsc49902/Token.class</exclude>
+                        <exclude>ca/ucalgary/cpsc49902/TokenMgrError.class</exclude>
+                        <exclude>ca/ucalgary/cpsc49902/ParseException.class</exclude>
+                        <exclude>ca/ucalgary/cpsc49902/SimpleCharStream.class</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+            <!-- Surefire — ensures JUnit 5 tests are picked up by mvn test -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
             </plugin>
         </plugins>
     </build>

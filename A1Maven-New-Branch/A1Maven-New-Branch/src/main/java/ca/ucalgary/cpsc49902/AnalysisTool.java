@@ -5,18 +5,12 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.misc.Interval;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Identifies method and constructor invocations in Java 1.2 source files.
- */
 public class AnalysisTool {
-
-    // ================================================================
-    // InvocationRecord
-    // ================================================================
 
     @SuppressWarnings("ClassCanBeRecord")
     public static class InvocationRecord {
@@ -45,10 +39,6 @@ public class AnalysisTool {
         }
     }
 
-    // ================================================================
-    // SyntaxError (NEW)
-    // ================================================================
-
     public static class SyntaxError {
         private final int line;
         private final int column;
@@ -70,10 +60,7 @@ public class AnalysisTool {
         }
     }
 
-    // ================================================================
-    // InvocationListener
-    // ================================================================
-
+    // invocation listener
     public static class InvocationListener extends JavaParserBaseListener {
 
         private final String fileName;
@@ -140,8 +127,6 @@ public class AnalysisTool {
             add(text, ctx.getStart());
         }
 
-        // ---------------- Helper Methods ----------------
-
         private static String sourceText(ParserRuleContext ctx) {
             Interval interval = new Interval(
                     ctx.getStart().getStartIndex(),
@@ -188,9 +173,11 @@ public class AnalysisTool {
         }
     }
 
-    // ================================================================
-    // Parser Construction Helper
-    // ================================================================
+    // handling absolute and relative paths
+    private static Path resolvePath(String filePath) {
+        Path p = Paths.get(filePath);
+        return p.isAbsolute() ? p : Paths.get(System.getProperty("user.dir")).resolve(p);
+    }
 
     private static JavaParser.CompilationUnitContext buildTree(
             String filePath,
@@ -198,7 +185,7 @@ public class AnalysisTool {
     ) throws IOException {
 
         JavaLexer lexer = new JavaLexer(
-                CharStreams.fromPath(Paths.get(filePath))
+                CharStreams.fromPath(resolvePath(filePath))  // relative-path-aware
         );
         lexer.removeErrorListeners();
 
@@ -214,10 +201,6 @@ public class AnalysisTool {
         return parser.compilationUnit();
     }
 
-    // ================================================================
-    // Public API
-    // ================================================================
-
     public static List<InvocationRecord> analyze(String filePath)
             throws IOException {
 
@@ -226,7 +209,7 @@ public class AnalysisTool {
 
         InvocationListener listener =
                 new InvocationListener(
-                        Paths.get(filePath).getFileName().toString()
+                        resolvePath(filePath).getFileName().toString()  // relative-path-aware
                 );
 
         ParseTreeWalker.DEFAULT.walk(listener, tree);
@@ -269,10 +252,6 @@ public class AnalysisTool {
         return sb.toString();
     }
 
-    // ================================================================
-    // CLI Entry
-    // ================================================================
-
     public static void main(String[] args) throws IOException {
 
         if (args.length == 0) {
@@ -299,4 +278,5 @@ public class AnalysisTool {
 
         System.out.println(formatOutput(all));
     }
+
 }
