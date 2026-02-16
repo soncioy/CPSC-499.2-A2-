@@ -78,18 +78,37 @@ SPECIAL_TOKEN :
 /*
 * COMMENTS
 */
+SPECIAL_TOKEN :
+{
+    <SINGLE_LINE_COMMENT : "//" (~["\n","\r"])*>
+}
+
 MORE :
 {
-  "//" : IN_SINGLE_LINE_COMMENT
-| < "/**" ~[ "/" ] > { input_stream.backup(1); } : IN_FORMAL_COMMENT
+ < "/**" ~[ "/" ] > { input_stream.backup(1); } : IN_FORMAL_COMMENT
 | "/*" : IN_MULTI_LINE_COMMENT
 }
 
+/*
 < IN_SINGLE_LINE_COMMENT >
+MORE :
+{
+  < ~["\n","\r"] >
+}
+
+<IN_SINGLE_LINE_COMMENT>
 SPECIAL_TOKEN :
 {
-  < SINGLE_LINE_COMMENT : "\n" | "\r" | "\r\n" > : DEFAULT
+    "\r\n" : DEFAULT
+    | "\n" : DEFAULT
+    | "\r" : DEFAULT
 }
+
+<*>
+TOKEN :
+{
+    <EOF>
+} */
 
 < IN_MULTI_LINE_COMMENT >
 SPECIAL_TOKEN :
@@ -103,7 +122,7 @@ SPECIAL_TOKEN :
   < FORMAL_COMMENT : "*/" > : DEFAULT
 }
 
-< IN_SINGLE_LINE_COMMENT, IN_FORMAL_COMMENT, IN_MULTI_LINE_COMMENT >
+< IN_FORMAL_COMMENT, IN_MULTI_LINE_COMMENT >
 MORE :
 {
   < ~[ ] >
@@ -481,8 +500,10 @@ void PrimarySuffix() : {}
 | LOOKAHEAD(2) <DOT> AllocationExpression()
 | <LBRACKET> Expression() <RBRACKET>
 | <DOT> <IDENTIFIER>
-| Arguments()
+| MethodInvocation() //replaced Arguments() with MethodInvocation() for jjtree
 }
+
+void MethodInvocation() : {} { Arguments() }
 
 void ResultType() : {} { <VOID> | Type() }
 

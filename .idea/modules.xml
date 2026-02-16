@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/A1Maven-New-Branch/A1Maven-New-Branch/Assignment1_CPSC49902.iml" filepath="$PROJECT_DIR$/A1Maven-New-Branch/A1Maven-New-Branch/Assignment1_CPSC49902.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/CPSC-499.2-A2-.iml" filepath="$PROJECT_DIR$/.idea/CPSC-499.2-A2-.iml" />
     </modules>
   </component>

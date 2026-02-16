@@ -144,6 +144,13 @@ public class MethodVisitor implements Java12ParserVisitor {
     @Override public Object visit(ASTPrimaryExpression node, Object data) { return node.childrenAccept(this, data); }
     @Override public Object visit(ASTPrimaryPrefix node, Object data) { return node.childrenAccept(this, data); }
     @Override public Object visit(ASTPrimarySuffix node, Object data) { return node.childrenAccept(this, data); }
+
+    /*@Override
+    public Object visit(ASTMethodInvocation node, Object data) {
+        return null;
+    }*/
+
     @Override public Object visit(ASTResultType node, Object data) { return node.childrenAccept(this, data); }
     @Override public Object visit(ASTArrayDimsAndInits node, Object data) { return node.childrenAccept(this, data); }
+    @Override public Object visit(ASTMethodInvocation node, Object data) { return node.childrenAccept(this, data); }
 }
