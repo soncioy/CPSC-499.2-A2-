@@ -31,7 +31,7 @@ INTERFACE					: 'interface';
 LONG							: 'long';
 NATIVE						: 'native';
 NEW							: 'new';
-PACKAGE						: 'package';
+PACKAGE                     : 'package';
 PRIVATE						: 'private';
 PROTECTED					: 'protected';
 PUBLIC						: 'public';
