@@ -28,7 +28,7 @@
   BUILD_TOKEN_MANAGER = true;
   JAVA_UNICODE_ESCAPE = true;
   UNICODE_INPUT = true;
-  ERROR_REPORTING = false;
+  ERROR_REPORTING = true;
   COMMON_TOKEN_ACTION = false;
   STATIC = false;
   DEBUG_TOKEN_MANAGER = false;
@@ -376,13 +376,13 @@ void ClassBodyDeclaration() : {}
 */
 void MemberDecl() : {}
 {
-
   LOOKAHEAD( Type() <IDENTIFIER> )
   MethodOrFieldDecl()
 
 | <VOID> <IDENTIFIER> MethodDeclaratorRest()
 
-| <IDENTIFIER> ConstructorDeclaratorRest()
+| LOOKAHEAD( <IDENTIFIER> <LPAREN> )
+  <IDENTIFIER> ConstructorDeclaratorRest()
 
 | ClassOrInterfaceDeclaration()
 }
@@ -452,7 +452,7 @@ void ConstructorDeclaratorRest() : {}
 
 void ConstructorBody() : {}
 {
-  <LBRACE> [ LOOKAHEAD(ExplicitConstructorInvocation()) ExplicitConstructorInvocation() ] ( BlockStatement() )* <RBRACE>
+  <LBRACE> [ LOOKAHEAD(2) ExplicitConstructorInvocation() ] ( BlockStatement() )* <RBRACE>
 }
 
 void ExplicitConstructorInvocation() : {}
@@ -514,9 +514,13 @@ void BasicType() : {}
   <BOOLEAN> | <BYTE> | <SHORT> | <CHAR> | <INT> | <LONG> | <FLOAT> | <DOUBLE>
 }
 
-void QualifiedIdentifier() : {}
+void QualifiedIdentifier() : {Token t; String s = "";}
 {
-  <IDENTIFIER> ( <DOT> <IDENTIFIER> )*
+  t=<IDENTIFIER> { s = t.image; }
+  (
+    <DOT> t=<IDENTIFIER> { s += "." + t.image; }
+  )*
+  { jjtThis.jjtSetValue(s); }
 }
 
 void QualifiedIdentifierList() : {}
@@ -560,9 +564,6 @@ void BracketsOpt() : {}
 
 void Statement() : {}
 {
-  LOOKAHEAD(2)
-  <IDENTIFIER> <COLON> Statement()
-|
   Block()
 | <IF> ParExpression() Statement() [ LOOKAHEAD(1) <ELSE> Statement() ]
 | <FOR> <LPAREN> [ ForInit() ] <SEMICOLON> [ Expression() ] <SEMICOLON> [ ForUpdate() ] <RPAREN> Statement()
@@ -586,12 +587,19 @@ void Block() : {}
 
 void BlockStatement() : {}
 {
+  // 1. Check for Label FIRST (e.g., "label:") to prevent Type() from eating the identifier
+  LOOKAHEAD( <IDENTIFIER> <COLON> )
+  Statement()
+|
+  // 2. Check for Local Variable Declaration (e.g., "int x;")
   LOOKAHEAD( [ <FINAL> ] Type() <IDENTIFIER> )
   LocalVariableDeclarationStatement()
 |
-  LOOKAHEAD( ModifiersOpt() (<CLASS>|<INTERFACE>) )
+  // 3. Check for Inner Class
+  LOOKAHEAD( ModifiersOpt() ( <CLASS> | <INTERFACE> ) )
   ClassOrInterfaceDeclaration()
 |
+  // 4. Standard Statement
   Statement()
 }
 
@@ -749,35 +757,54 @@ void PostfixExpression() : {}
 
 /* Primary / Creator / Selector Logic */
 
-void PrimaryExpression() : {}
+void PrimaryExpression() #PrimaryExpression :
 {
-  PrimaryPrefix() ( LOOKAHEAD(2) PrimarySuffix() )*
+  String value = "";
+}
+{
+  PrimaryPrefix()
+  {
+    if (jjtThis.jjtGetValue() != null) {
+      value = jjtThis.jjtGetValue().toString();
+    }
+  }
+  (
+    LOOKAHEAD(2)
+    PrimarySuffix()
+    {
+      if (jjtThis.jjtGetValue() != null) {
+        value += jjtThis.jjtGetValue().toString();
+      }
+    }
+  )*
+  {
+    jjtThis.jjtSetValue(value);
+  }
 }
 
-void PrimaryPrefix() : {}
+void PrimaryPrefix() : {Token t; Token t2;}
 {
   Literal()
-| <THIS>
-| <SUPER> <DOT> <IDENTIFIER>
+| t=<THIS> { jjtThis.jjtSetValue(t.image); }
+| t=<SUPER> <DOT> t2=<IDENTIFIER> { jjtThis.jjtSetValue(t.image + "." + t2.image); }
 | <LPAREN> Expression() <RPAREN>
 | AllocationExpression()
 | LOOKAHEAD( ResultType() <DOT> <CLASS> ) ResultType() <DOT> <CLASS>
 | QualifiedIdentifier()
 }
 
-void PrimarySuffix() : {}
+void PrimarySuffix() : {Token t;}
 {
-  LOOKAHEAD(2) <DOT> <THIS>
-| LOOKAHEAD(2) <DOT> <SUPER>
-| LOOKAHEAD(2) <DOT> AllocationExpression() // .new InnerCreator()
+  LOOKAHEAD(2) <DOT> t=<THIS> { jjtThis.jjtSetValue("." + t.image); }
+| LOOKAHEAD(2) <DOT> <SUPER> { jjtThis.jjtSetValue(".super"); }
+| LOOKAHEAD(2) <DOT> AllocationExpression()
 | <LBRACKET> Expression() <RBRACKET>
-| <DOT> <IDENTIFIER>
+| <DOT> t=<IDENTIFIER> { jjtThis.jjtSetValue("." + t.image); }
 | Arguments()
 }
 
-/* CREATOR LOGIC (Mapped to AllocationExpression for visitor compatibility)
-  Chapter 18: Creator: QualifiedIdentifier ( ArrayCreatorRest | ClassCreatorRest )
-*/
+
+//  Chapter 18: Creator: QualifiedIdentifier ( ArrayCreatorRest | ClassCreatorRest )
 void AllocationExpression() #AllocationExpression : {}
 {
   <NEW> Creator()
@@ -819,7 +846,16 @@ void ResultType() : {}
   <VOID> | Type()
 }
 
-void Literal() : {}
+void Literal() : {Token t;}
 {
-  <INTEGER_LITERAL> | <FLOATING_POINT_LITERAL> | <CHARACTER_LITERAL> | <STRING_LITERAL> | <TRUE> | <FALSE> | <NULL>
+  (
+    t=<INTEGER_LITERAL>
+  | t=<FLOATING_POINT_LITERAL>
+  | t=<CHARACTER_LITERAL>
+  | t=<STRING_LITERAL>
+  | t=<TRUE>
+  | t=<FALSE>
+  | t=<NULL>
+  )
+  { jjtThis.jjtSetValue(t.image); }
 }

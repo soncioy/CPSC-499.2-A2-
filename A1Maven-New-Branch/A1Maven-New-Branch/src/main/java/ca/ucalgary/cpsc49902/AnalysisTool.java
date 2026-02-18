@@ -215,23 +215,22 @@ public class AnalysisTool {
     public static List<InvocationRecord> runJavaCCAnalysis(String path) {
         List<InvocationRecord> records = new ArrayList<>();
         try {
-            Java12Parser.resetInvocations();
-            Java12Parser.setFileName(new java.io.File(path).getName());
-
             byte[] encoded = java.nio.file.Files.readAllBytes(Paths.get(path));
             String content = new String(encoded) + "\n";
             java.io.InputStream fis = new java.io.ByteArrayInputStream(content.getBytes());
 
-            // FIX IS HERE: Wrap 'fis' in an InputStreamReader
             Java12Parser parser = new Java12Parser(new java.io.InputStreamReader(fis));
-
             Node root = parser.CompilationUnit();
 
-            MethodVisitor visitor = new MethodVisitor(path, records);
+            MethodVisitor visitor = new MethodVisitor(new java.io.File(path).getName(), records);
             root.jjtAccept(visitor, null);
 
+        } catch (ca.ucalgary.cpsc49902.javacc.ParseException | ca.ucalgary.cpsc49902.javacc.TokenMgrException e) {
+            // THROW this. The Static Tests check 'assertTrue(javaccThrew)'.
+            // The Dynamic Test harness will catch this and mark it as "SYNTAX_ERROR".
+            throw new RuntimeException("SYNTAX_ERROR", e);
         } catch (Throwable e) {
-            // System.err.println("!!! JAVACC CRASH on " + path + ": " + e.getMessage());
+            // ignore other errors
         }
         return records;
     }
