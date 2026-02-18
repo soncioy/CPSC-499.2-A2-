@@ -1,5 +1,9 @@
 package Test;
 
+/*
+Test Case: Recursive depth Analysis
+Purpose: Tests the parser ability to handle deep AST nesting.
+ */
 public class DeepNesting {
 
     class Torture {
