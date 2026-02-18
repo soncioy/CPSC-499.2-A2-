@@ -6,7 +6,6 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,34 +14,47 @@ import java.util.List;
 
 public class AnalysisTool {
 
+        // --- MAIN METHOD (Updated to run BOTH) ---
+        public static void main(String[] args) {
+            if (args.length == 0) {
+                System.out.println("Usage: java ca.ucalgary.cpsc49902.AnalysisTool <file_path>...");
+                return;
+            }
 
-    public static void main(String[] args) {
-        if (args.length == 0) {
-            System.out.println("Usage: java ca.ucalgary.cpsc49902.AnalysisTool <file_path>...");
-            return;
+            // 1. Run ANTLR Analysis
+            System.out.println("========== ANTLR ANALYSIS ==========");
+            List<InvocationRecord> antlrResults = new ArrayList<>();
+            for (String filePath : args) {
+                try {
+                    antlrResults.addAll(analyze(filePath));
+                } catch (Exception e) {
+                    System.err.println("ANTLR Error parsing " + filePath + ": " + e.getMessage());
+                }
+            }
+            printResults(antlrResults);
+
+            System.out.println(); // spacer
+
+            // 2. Run JavaCC Analysis
+            System.out.println("========== JavaCC ANALYSIS ==========");
+            List<InvocationRecord> javaccResults = new ArrayList<>();
+            for (String filePath : args) {
+                try {
+                    javaccResults.addAll(runJavaCCAnalysis(filePath));
+                } catch (Exception e) {
+                    System.err.println("JavaCC Error parsing " + filePath + ": " + e.getMessage());
+                }
+            }
+            printResults(javaccResults);
         }
 
-        List<InvocationRecord> allResults = new ArrayList<>();
-
-        // 1. Loop through all input files
-        for (String filePath : args) {
-            try {
-                // RUNNING JAVACC (You can switch to analyze(filePath) for ANTLR if preferred)
-                List<InvocationRecord> fileResults = runJavaCCAnalysis(filePath);
-                allResults.addAll(fileResults);
-            } catch (Exception e) {
-                System.err.println("Error parsing " + filePath + ": " + e.getMessage());
+        // Helper to print exact assignment format
+        private static void printResults(List<InvocationRecord> results) {
+            System.out.println(results.size() + " method/constructor invocation(s) found in the input file(s)");
+            for (InvocationRecord r : results) {
+                System.out.println(r.toString());
             }
         }
-
-        // 2. REQUIRED HEADER
-        System.out.println(allResults.size() + " method/constructor invocation(s) found in the input file(s)");
-
-        // 3. REQUIRED LIST
-        for (InvocationRecord r : allResults) {
-            System.out.println(r.toString());
-        }
-    }
 
     // --- DATA CLASS ---
     public static class InvocationRecord {
