@@ -2,7 +2,6 @@ package ca.ucalgary.cpsc49902;
 
 import ca.ucalgary.cpsc49902.javacc.Java12Parser;
 import ca.ucalgary.cpsc49902.javacc.Node;
-import ca.ucalgary.cpsc49902.javacc.SimpleNode;
 
 import java.io.FileInputStream;
 import java.io.InputStreamReader; // Import this
@@ -16,7 +15,7 @@ public class TreeGenerator {
 
         try(FileInputStream inputStream = new FileInputStream(args[0])){
             // FIX IS HERE: Use InputStreamReader
-            Java12Parser parser = new Java12Parser(new InputStreamReader(inputStream));
+            Java12Parser parser = new Java12Parser(new InputStreamReader(inputStream, java.nio.charset.StandardCharsets.UTF_8));
             Node root = parser.CompilationUnit();
             TreeGeneratorHelper.dump(root, "");
         }

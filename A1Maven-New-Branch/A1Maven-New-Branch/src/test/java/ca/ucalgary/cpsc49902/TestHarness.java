@@ -39,14 +39,14 @@ class TestHarness {
         boolean expectSyntaxError = expectedLines.contains("SYNTAX_ERROR");
 
         // 1. RUN ANTLR
-        List<AnalysisTool.InvocationRecord> antlrResults = new ArrayList<>();
-        try { antlrResults = AnalysisTool.analyze(file.getAbsolutePath()); } catch (Exception e) {}
+        List<AnalysisToo.InvocationRecord> antlrResults = new ArrayList<>();
+        try { antlrResults = AnalysisToo.analyze(file.getAbsolutePath()); } catch (Exception e) {}
         List<String> antlrStrings = formatResults(antlrResults);
 
         // 2. RUN JAVACC (Handle the Exception wrapper)
         List<String> javaccStrings = new ArrayList<>();
         try {
-            List<AnalysisTool.InvocationRecord> javaccResults = AnalysisTool.runJavaCCAnalysis(file.getAbsolutePath());
+            List<AnalysisToo.InvocationRecord> javaccResults = AnalysisToo.runJavaCCAnalysis(file.getAbsolutePath());
             javaccStrings = formatResults(javaccResults);
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().contains("SYNTAX_ERROR")) {
@@ -57,7 +57,7 @@ class TestHarness {
         // 3. CHECK FOR EXPECTED ERROR
         if (expectSyntaxError) {
             boolean antlrRejected = antlrResults.isEmpty() || antlrStrings.toString().contains("SYNTAX_ERROR");
-            try { if (!AnalysisTool.getSyntaxErrors(file.getAbsolutePath()).isEmpty()) antlrRejected = true; } catch(Exception e){}
+            try { if (!AnalysisToo.getSyntaxErrors(file.getAbsolutePath()).isEmpty()) antlrRejected = true; } catch(Exception e){}
 
             boolean javaccRejected = javaccStrings.isEmpty() || javaccStrings.contains("SYNTAX_ERROR");
 
@@ -120,9 +120,9 @@ class TestHarness {
         return expected;
     }
 
-    private List<String> formatResults(List<AnalysisTool.InvocationRecord> invs) {
+    private List<String> formatResults(List<AnalysisToo.InvocationRecord> invs) {
         List<String> strings = new ArrayList<>();
-        for (AnalysisTool.InvocationRecord i : invs) strings.add(i.toString());
+        for (AnalysisToo.InvocationRecord i : invs) strings.add(i.toString());
         Collections.sort(strings);
         return strings;
     }
@@ -136,7 +136,7 @@ class TestHarness {
     /*
      * HELPER: Verifies a single list of actual results against expected results.
      */
-    private void verifyResultList(String parserName, List<AnalysisTool.InvocationRecord> expected, List<AnalysisTool.InvocationRecord> actual) {
+    private void verifyResultList(String parserName, List<AnalysisToo.InvocationRecord> expected, List<AnalysisToo.InvocationRecord> actual) {
         if (actual.size() != expected.size()) {
             fail(parserName + ": wrong number of invocations.\n" +
                     "expected count: " + expected.size() + "\n" +
@@ -145,7 +145,7 @@ class TestHarness {
                     "actual:\n" + formatList(actual));
         }
 
-        for (AnalysisTool.InvocationRecord exp : expected) {
+        for (AnalysisToo.InvocationRecord exp : expected) {
             boolean found = actual.stream().anyMatch(a ->
                     a.getExpression().equals(exp.getExpression()) &&
                             a.getLine()       == exp.getLine()            &&
@@ -157,7 +157,7 @@ class TestHarness {
             }
         }
 
-        for (AnalysisTool.InvocationRecord act : actual) {
+        for (AnalysisToo.InvocationRecord act : actual) {
             boolean matched = expected.stream().anyMatch(e ->
                     e.getExpression().equals(act.getExpression()) &&
                             e.getLine()       == act.getLine()            &&
@@ -175,22 +175,22 @@ class TestHarness {
      */
     private void assertInvocations(
             String filePath,
-            List<AnalysisTool.InvocationRecord> expected
+            List<AnalysisToo.InvocationRecord> expected
     ) throws IOException {
 
         // 1. Validate ANTLR
-        List<AnalysisTool.SyntaxError> antlrErrors = AnalysisTool.getSyntaxErrors(filePath);
+        List<AnalysisToo.SyntaxError> antlrErrors = AnalysisToo.getSyntaxErrors(filePath);
         if (!antlrErrors.isEmpty()) {
             fail("ANTLR parser threw syntax errors:\n" +
                     antlrErrors.stream().map(Object::toString).collect(Collectors.joining("\n")));
         }
-        List<AnalysisTool.InvocationRecord> actualAntlr = AnalysisTool.analyze(filePath);
+        List<AnalysisToo.InvocationRecord> actualAntlr = AnalysisToo.analyze(filePath);
         verifyResultList("ANTLR", expected, actualAntlr);
 
         // 2. Validate JavaCC
-        List<AnalysisTool.InvocationRecord> actualJavaCC;
+        List<AnalysisToo.InvocationRecord> actualJavaCC;
         try {
-            actualJavaCC = AnalysisTool.runJavaCCAnalysis(filePath);
+            actualJavaCC = AnalysisToo.runJavaCCAnalysis(filePath);
         } catch (Exception e) {
             fail("JavaCC parser threw exception: " + e.getMessage());
             return;
@@ -198,7 +198,7 @@ class TestHarness {
         verifyResultList("JavaCC", expected, actualJavaCC);
     }
 
-    private String formatList(List<AnalysisTool.InvocationRecord> list) {
+    private String formatList(List<AnalysisToo.InvocationRecord> list) {
         return list.stream()
                 .map(r -> "  " + r)
                 .collect(Collectors.joining("\n"));
@@ -212,9 +212,9 @@ class TestHarness {
     void constructor_test_validation() throws IOException {
         String file = path("src", "main", "java", "Test", "Constructor.java");
 
-        List<AnalysisTool.InvocationRecord> expected = List.of(
-                new AnalysisTool.InvocationRecord("this()",   "Constructor.java",  9, 9),
-                new AnalysisTool.InvocationRecord("super()",  "Constructor.java", 14, 9)
+        List<AnalysisToo.InvocationRecord> expected = List.of(
+                new AnalysisToo.InvocationRecord("this()",   "Constructor.java",  9, 9),
+                new AnalysisToo.InvocationRecord("super()",  "Constructor.java", 14, 9)
         );
 
         assertInvocations(file, expected);
@@ -224,9 +224,9 @@ class TestHarness {
     void dangling_else_validation() throws IOException {
         String file = path("src", "main", "java", "Test", "DanglingElse.java");
 
-        List<AnalysisTool.InvocationRecord> expected = List.of(
-                new AnalysisTool.InvocationRecord("doSomething()",     "DanglingElse.java", 14, 17),
-                new AnalysisTool.InvocationRecord("doSomethingElse()", "DanglingElse.java", 16, 17)
+        List<AnalysisToo.InvocationRecord> expected = List.of(
+                new AnalysisToo.InvocationRecord("doSomething()",     "DanglingElse.java", 14, 17),
+                new AnalysisToo.InvocationRecord("doSomethingElse()", "DanglingElse.java", 16, 17)
         );
 
         assertInvocations(file, expected);
@@ -242,11 +242,11 @@ class TestHarness {
     void failure_test() throws IOException {
         String file = path("src", "main", "java", "Test", "FailureTest.java");
 
-        List<AnalysisTool.InvocationRecord> expected = List.of(
-                new AnalysisTool.InvocationRecord("FailureTest.this.toString()",        "FailureTest.java", 24, 25),
-                new AnalysisTool.InvocationRecord("System.out.println(\"Local Class\")", "FailureTest.java", 37, 36),
-                new AnalysisTool.InvocationRecord("new Local()",                         "FailureTest.java", 39,  9),
-                new AnalysisTool.InvocationRecord("new Local().msg()",                   "FailureTest.java", 39, 20)
+        List<AnalysisToo.InvocationRecord> expected = List.of(
+                new AnalysisToo.InvocationRecord("FailureTest.this.toString()",        "FailureTest.java", 24, 25),
+                new AnalysisToo.InvocationRecord("System.out.println(\"Local Class\")", "FailureTest.java", 37, 36),
+                new AnalysisToo.InvocationRecord("new Local()",                         "FailureTest.java", 39,  9),
+                new AnalysisToo.InvocationRecord("new Local().msg()",                   "FailureTest.java", 39, 20)
         );
 
         assertInvocations(file, expected);
@@ -262,8 +262,8 @@ class TestHarness {
     void scope_should_parse_and_detect_invocation() throws IOException {
         String file = path("src", "main", "java", "Test", "Scope.java");
 
-        List<AnalysisTool.InvocationRecord> expected = List.of(
-                new AnalysisTool.InvocationRecord("Scope.this.method()", "Scope.java", 10, 27)
+        List<AnalysisToo.InvocationRecord> expected = List.of(
+                new AnalysisToo.InvocationRecord("Scope.this.method()", "Scope.java", 10, 27)
         );
 
         assertInvocations(file, expected);
@@ -274,7 +274,7 @@ class TestHarness {
                         "Scope.this.method(): file Scope.java, line 10, column 27";
 
         assertEquals(expectedOutput,
-                AnalysisTool.formatOutput(AnalysisTool.analyze(file)),
+                AnalysisToo.formatOutput(AnalysisToo.analyze(file)),
                 "formatOutput() output doesn't match the required format");
     }
 
@@ -283,9 +283,9 @@ class TestHarness {
         String file = path("src", "main", "java", "Test", "Literals.java");
 
         // ANTLR Checks
-        List<AnalysisTool.SyntaxError> errors = AnalysisTool.getSyntaxErrors(file);
+        List<AnalysisToo.SyntaxError> errors = AnalysisToo.getSyntaxErrors(file);
         Set<Integer> knownFailingLines = Set.of(6, 7, 8);
-        List<AnalysisTool.SyntaxError> unexpectedErrors = errors.stream()
+        List<AnalysisToo.SyntaxError> unexpectedErrors = errors.stream()
                 .filter(e -> !knownFailingLines.contains(e.getLine()))
                 .toList();
         assertTrue(unexpectedErrors.isEmpty(), "ANTLR: got errors outside the lines we knew would fail");
@@ -296,7 +296,7 @@ class TestHarness {
         // Otherwise, check if results are empty or contain error records.
         boolean javaCCFailed = false;
         try {
-            AnalysisTool.runJavaCCAnalysis(file);
+            AnalysisToo.runJavaCCAnalysis(file);
         } catch (Exception e) {
             javaCCFailed = true;
         } catch (Error e) { // TokenMgrError usually extends Error, not Exception
@@ -312,12 +312,12 @@ class TestHarness {
         String file = path("src", "main", "java", "Test", "HexTest.java");
 
         // Verify ANTLR
-        assertDoesNotThrow(() -> AnalysisTool.analyze(file));
-        assertEquals(0, AnalysisTool.analyze(file).size());
+        assertDoesNotThrow(() -> AnalysisToo.analyze(file));
+        assertEquals(0, AnalysisToo.analyze(file).size());
 
         // Verify JavaCC
-        assertDoesNotThrow(() -> AnalysisTool.runJavaCCAnalysis(file), "JavaCC should handle hex literals");
-        assertEquals(0, AnalysisTool.runJavaCCAnalysis(file).size());
+        assertDoesNotThrow(() -> AnalysisToo.runJavaCCAnalysis(file), "JavaCC should handle hex literals");
+        assertEquals(0, AnalysisToo.runJavaCCAnalysis(file).size());
     }
 
     @Test
@@ -325,14 +325,14 @@ class TestHarness {
         String file = path("src", "main", "java", "Test", "Java5Features.java");
 
         // 1. ANTLR Check
-        assertFalse(AnalysisTool.getSyntaxErrors(file).isEmpty(),
+        assertFalse(AnalysisToo.getSyntaxErrors(file).isEmpty(),
                 "ANTLR: java 5 features should produce syntax errors");
 
         // 2. JavaCC Check
         // We expect JavaCC to throw a ParseException or TokenMgrError
         boolean javaccThrew = false;
         try {
-            AnalysisTool.runJavaCCAnalysis(file);
+            AnalysisToo.runJavaCCAnalysis(file);
         } catch (Throwable t) {
             javaccThrew = true;
         }
@@ -344,12 +344,12 @@ class TestHarness {
         String file = path("src", "main", "java", "Test", "Java7Features.java");
 
         // 1. ANTLR Check
-        assertFalse(AnalysisTool.getSyntaxErrors(file).isEmpty(), "ANTLR: java 7 features should produce syntax errors");
+        assertFalse(AnalysisToo.getSyntaxErrors(file).isEmpty(), "ANTLR: java 7 features should produce syntax errors");
 
         // 2. JavaCC Check
         boolean javaccThrew = false;
         try {
-            AnalysisTool.runJavaCCAnalysis(file);
+            AnalysisToo.runJavaCCAnalysis(file);
         } catch (Throwable t) {
             javaccThrew = true;
         }
@@ -361,12 +361,12 @@ class TestHarness {
         String file = path("src", "main", "java", "Test", "Java8Features.java");
 
         // 1. ANTLR Check
-        assertFalse(AnalysisTool.getSyntaxErrors(file).isEmpty(), "ANTLR: java 8 features should produce syntax errors");
+        assertFalse(AnalysisToo.getSyntaxErrors(file).isEmpty(), "ANTLR: java 8 features should produce syntax errors");
 
         // 2. JavaCC Check
         boolean javaccThrew = false;
         try {
-            AnalysisTool.runJavaCCAnalysis(file);
+            AnalysisToo.runJavaCCAnalysis(file);
         } catch (Throwable t) {
             javaccThrew = true;
         }
@@ -379,8 +379,8 @@ class TestHarness {
         // It's fine to keep it ANTLR-only unless you implemented a custom error listener for JavaCC too.
         String file = path("src", "main", "java", "Test", "Java7Features.java");
 
-        List<AnalysisTool.SyntaxError> errors = AnalysisTool.getSyntaxErrors(file);
-        AnalysisTool.SyntaxError target = errors.stream()
+        List<AnalysisToo.SyntaxError> errors = AnalysisToo.getSyntaxErrors(file);
+        AnalysisToo.SyntaxError target = errors.stream()
                 .filter(e -> e.getLine() == 8)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("expected an error on line 8 but didn't find one"));
@@ -392,13 +392,13 @@ class TestHarness {
     void invocation_variants_test() throws IOException {
         String file = path("src", "main", "java", "Test", "InvocationVariants.java");
 
-        List<AnalysisTool.InvocationRecord> expected = List.of(
-                new AnalysisTool.InvocationRecord("super.toString()",          "InvocationVariants.java", 12, 21),
-                new AnalysisTool.InvocationRecord("super.toString().concat(\"x\")", "InvocationVariants.java", 12, 32),
-                new AnalysisTool.InvocationRecord("add(1, 2)",                 "InvocationVariants.java", 21,  9),
-                new AnalysisTool.InvocationRecord("new Pair(3, 4)",            "InvocationVariants.java", 31,  9),
-                new AnalysisTool.InvocationRecord("new InvocationVariants()",  "InvocationVariants.java", 45, 36),
-                new AnalysisTool.InvocationRecord("outer.new Inner()",         "InvocationVariants.java", 46, 14)
+        List<AnalysisToo.InvocationRecord> expected = List.of(
+                new AnalysisToo.InvocationRecord("super.toString()",          "InvocationVariants.java", 12, 21),
+                new AnalysisToo.InvocationRecord("super.toString().concat(\"x\")", "InvocationVariants.java", 12, 32),
+                new AnalysisToo.InvocationRecord("add(1, 2)",                 "InvocationVariants.java", 21,  9),
+                new AnalysisToo.InvocationRecord("new Pair(3, 4)",            "InvocationVariants.java", 31,  9),
+                new AnalysisToo.InvocationRecord("new InvocationVariants()",  "InvocationVariants.java", 45, 36),
+                new AnalysisToo.InvocationRecord("outer.new Inner()",         "InvocationVariants.java", 46, 14)
         );
         assertInvocations(file, expected);
     }
@@ -407,9 +407,9 @@ class TestHarness {
     void invocation_variants_record_fields_test() throws IOException {
         String file = path("src", "main", "java", "Test", "RecordFields.java");
 
-        List<AnalysisTool.InvocationRecord> expected = List.of(
-                new AnalysisTool.InvocationRecord("System.out.println(\"first\")",  "RecordFields.java", 16, 19),
-                new AnalysisTool.InvocationRecord("System.out.println(\"second\")", "RecordFields.java", 17, 19)
+        List<AnalysisToo.InvocationRecord> expected = List.of(
+                new AnalysisToo.InvocationRecord("System.out.println(\"first\")",  "RecordFields.java", 16, 19),
+                new AnalysisToo.InvocationRecord("System.out.println(\"second\")", "RecordFields.java", 17, 19)
         );
 
         assertInvocations(file, expected);

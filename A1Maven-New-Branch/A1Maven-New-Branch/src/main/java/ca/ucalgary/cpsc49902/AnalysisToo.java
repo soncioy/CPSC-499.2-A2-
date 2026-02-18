@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AnalysisTool {
+public class AnalysisToo {
 
     // =========================================================================
     // INNER CLASSES (Data Structures)
@@ -241,7 +241,7 @@ public class AnalysisTool {
 
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
-            System.err.println("Usage: java AnalysisTool <file1.java> [file2.java ...]");
+            System.err.println("Usage: java AnalysisToo <file1.java> [file2.java ...]");
             return;
         }
 

@@ -1,6 +1,6 @@
 package ca.ucalgary.cpsc49902;
 
-import ca.ucalgary.cpsc49902.AnalysisTool.InvocationRecord;
+import ca.ucalgary.cpsc49902.AnalysisToo.InvocationRecord;
 import ca.ucalgary.cpsc49902.javacc.*;
 import java.util.List;
 

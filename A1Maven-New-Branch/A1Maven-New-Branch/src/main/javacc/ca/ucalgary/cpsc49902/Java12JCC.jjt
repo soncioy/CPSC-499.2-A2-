@@ -518,7 +518,7 @@ void QualifiedIdentifier() : {Token t; String s = "";}
 {
   t=<IDENTIFIER> { s = t.image; }
   (
-    <DOT> t=<IDENTIFIER> { s += "." + t.image; }
+    LOOKAHEAD(2) <DOT> t=<IDENTIFIER> { s += "." + t.image; }
   )*
   { jjtThis.jjtSetValue(s); }
 }
