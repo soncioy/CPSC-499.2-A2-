@@ -1,9 +1,13 @@
+/**
+*ANTLR Parser Grammar for Java1.2.
+This grammar defines the syntactic structure of the language from the JLS 1.2 requirements Chapter 18
+*/
 parser grammar JavaParser;
 
 
 options { tokenVocab=JavaLexer; }
 
-
+// This is the root of the grammar, These rules define the entry point of the parser
 compilationUnit
    : packageDeclaration? importDeclaration* typeDeclaration* EOF
    ;
@@ -18,7 +22,9 @@ importDeclaration
    : IMPORT qualifiedIdentifier (PERIOD ASTERISK)? SEMICOLON
    ;
 
-
+/**The following section handles the main blueprint of the code, it defines how classes and interfaces
+*are declared including their hierarchy
+*/
 typeDeclaration
    : modifiers classOrInterfaceDeclaration
    | SEMICOLON
@@ -29,7 +35,6 @@ classOrInterfaceDeclaration
    : classDeclaration
    | interfaceDeclaration
    ;
-
 
 classDeclaration
    : CLASS Identifier
@@ -50,7 +55,10 @@ classBody
    : OPEN_BRACE classBodyDeclaration* CLOSE_BRACE
    ;
 
-
+/* Anonymous Class Logic
+This is where a unique Java 1.2 feature occurs where a class is defined on the fly during an allocation.
+this rule is there to ensure that the class's body is linked to the new expression.
+*/
 anonymousClassBody
    : OPEN_BRACE anonymousClassBodyDeclaration* CLOSE_BRACE
    ;
@@ -81,7 +89,9 @@ classBodyDeclaration
    | modifiers memberDecl
    ;
 
-
+/*
+These rules manage what can exist inside a class like fields, methods, and constructors.
+*/
 memberDecl
    : methodOrFieldDecl
    | VOID Identifier voidMethodDeclaratorRest
@@ -166,7 +176,10 @@ qualifiedIdentifierList
    : qualifiedIdentifier (COMMA qualifiedIdentifier)*
    ;
 
-
+/*Formal Parameters and Arguments
+These rules are there to define how data is passed into methods and constructors.
+It ensures that parameters in the declaration have types.
+*/
 formalParameters
    : OPEN_PARENTHESIS (formalParameter (COMMA formalParameter)*)? CLOSE_PARENTHESIS
    ;
@@ -234,7 +247,9 @@ accessModifier
    | PRIVATE
    ;
 
-
+/* Modifiers and Attributes
+These rules define the legal keywords that cna precede a declaration, which enforces Java 1.2 modifiers only.
+*/
 modifiers
    : accessModifier?
      (STATIC | ABSTRACT | FINAL | NATIVE | SYNCHRONIZED | TRANSIENT | VOLATILE | STRICTFP)*
@@ -251,7 +266,9 @@ type
    | qualifiedIdentifier (OPEN_BRACKET CLOSE_BRACKET)*
    ;
 
-
+/*Leaf Nodes: Primitives and literals
+These rules connect the parser with the lexer tokens for basic types and hard coded values.
+*/
 primitiveType
    : BOOLEAN
    | CHAR
@@ -281,6 +298,10 @@ localVariableDeclarationStatement
    : FINAL? type variableDeclarators SEMICOLON
    ;
 
+/* Statements and control flow
+this is the main logic part of the parser. It defines how loops, branches (if,else, and dangling else),
+and blocks are structured.
+*/
 
 statement
    : block
@@ -350,6 +371,9 @@ statementExpression
    | primary postfixOp?
    ;
 
+/* Expression Hierarchy
+This part of the parser ensures that the math and logic happen in the correct order. for example * before +
+*/
 
 expression
    : assignmentExpression
@@ -446,7 +470,10 @@ multiplicativeExpression
    : unaryExpression ((ASTERISK | SLASH | PERCENT) unaryExpression)*
    ;
 
-
+/* Unary and Postfix Operations
+These rules handle operations on a single operand like incremenet, decrement, and logical negations.
+Aswell as cast to manage operations for type conversion.
+*/
 unaryExpression
    : PLUS unaryExpression
    | MINUS unaryExpression
@@ -490,7 +517,9 @@ castExpression
    | OPEN_PARENTHESIS qualifiedIdentifier (OPEN_BRACKET CLOSE_BRACKET)* CLOSE_PARENTHESIS unaryExpressionNotPlusMinus
    ;
 
-
+/*Primary Expressions and Suffix
+this part handles the leaves of the tree. It handles the actual values, object creation and chained access
+*/
 primary
    : primaryPrefix primarySuffix*
    ;
@@ -578,7 +607,10 @@ argumentList
    : expression (COMMA expression)*
    ;
 
-
+/* Array Creation and Initialization
+These are specialized rules for Java arrays. It distinguishes between creating an array with a specific size
+and creating one with an initializer.
+*/
 arrayCreationExpression
    : NEW primitiveType arrayCreatorRest
    | NEW qualifiedIdentifier arrayCreatorRest
@@ -590,7 +622,9 @@ arrayCreatorRest
    | OPEN_BRACKET expression CLOSE_BRACKET (OPEN_BRACKET expression CLOSE_BRACKET)* bracketsOpt
    ;
 
-
+/* Qaulified Names and Scope Resolution
+This rule is used throughout the parser grammar to handle the dot notation required for paths, class name and other stuff.
+*/
 qualifiedIdentifier
    : Identifier (PERIOD Identifier)*
    ;
