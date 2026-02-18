@@ -26,7 +26,7 @@
  */
  options {
   BUILD_TOKEN_MANAGER = true;
-  JAVA_UNICODE_ESCAPE = false;
+  JAVA_UNICODE_ESCAPE = true;
   UNICODE_INPUT = true;
   ERROR_REPORTING = false;
   COMMON_TOKEN_ACTION = false;
@@ -306,7 +306,12 @@ Node CompilationUnit() : {}
 {
   [ PackageDeclaration() ]
   ( ImportDeclaration() )*
-  ( TypeDeclaration() )*
+  (
+    LOOKAHEAD( (Modifier())* ( <CLASS> | <INTERFACE> ) )
+    TypeDeclaration()
+    |
+    <SEMICOLON>
+  )*
   <EOF>
   { return jjtThis; }
 }
@@ -323,8 +328,7 @@ void ImportDeclaration() : {}
 
 void TypeDeclaration() : {}
 {
-   LOOKAHEAD(2) ClassOrInterfaceDeclaration()
- | <SEMICOLON>
+    ClassOrInterfaceDeclaration()
 }
 
 void ClassOrInterfaceDeclaration() : {}
@@ -372,17 +376,14 @@ void ClassBodyDeclaration() : {}
 */
 void MemberDecl() : {}
 {
-  /* Method or Field (Starts with Type Id...) */
+
   LOOKAHEAD( Type() <IDENTIFIER> )
   MethodOrFieldDecl()
 
-  /* Void Method */
 | <VOID> <IDENTIFIER> MethodDeclaratorRest()
 
-  /* Constructor (Starts with Id ...) */
 | <IDENTIFIER> ConstructorDeclaratorRest()
 
-  /* Inner Class/Interface */
 | ClassOrInterfaceDeclaration()
 }
 
@@ -559,6 +560,9 @@ void BracketsOpt() : {}
 
 void Statement() : {}
 {
+  LOOKAHEAD(2)
+  <IDENTIFIER> <COLON> Statement()
+|
   Block()
 | <IF> ParExpression() Statement() [ LOOKAHEAD(1) <ELSE> Statement() ]
 | <FOR> <LPAREN> [ ForInit() ] <SEMICOLON> [ Expression() ] <SEMICOLON> [ ForUpdate() ] <RPAREN> Statement()
@@ -573,7 +577,6 @@ void Statement() : {}
 | <CONTINUE> [ <IDENTIFIER> ] <SEMICOLON>
 | <SEMICOLON>
 | StatementExpression() <SEMICOLON>
-| <IDENTIFIER> <COLON> Statement()
 }
 
 void Block() : {}
@@ -589,7 +592,7 @@ void BlockStatement() : {}
   LOOKAHEAD( ModifiersOpt() (<CLASS>|<INTERFACE>) )
   ClassOrInterfaceDeclaration()
 |
-  [ LOOKAHEAD(2) <IDENTIFIER> <COLON> ] Statement()
+  Statement()
 }
 
 void LocalVariableDeclarationStatement() : {}

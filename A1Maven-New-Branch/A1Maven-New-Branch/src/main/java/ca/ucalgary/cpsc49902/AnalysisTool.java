@@ -3,8 +3,8 @@ package ca.ucalgary.cpsc49902;
 import ca.ucalgary.cpsc49902.javacc.Java12Parser;
 import ca.ucalgary.cpsc49902.javacc.Node;
 import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.misc.Interval;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import java.io.IOException;
 import java.nio.file.Path;

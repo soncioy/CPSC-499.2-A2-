@@ -1,14 +1,14 @@
 package ca.ucalgary.cpsc49902;
 
-//import ca.ucalgary.cpsc49902.AnalysisTool.InvocationRecord;
+import ca.ucalgary.cpsc49902.AnalysisTool.InvocationRecord;
 import ca.ucalgary.cpsc49902.javacc.*;
 import java.util.List;
 
 public class MethodVisitor extends Java12ParserDefaultVisitor {
     private final String fileName;
-    private final List<AnalysisTool.InvocationRecord> storage;
+    private final List<InvocationRecord> storage;
 
-    public MethodVisitor(String fileName, List<AnalysisTool.InvocationRecord> storage) {
+    public MethodVisitor(String fileName, List<InvocationRecord> storage) {
         this.fileName = fileName;
         this.storage = storage;
     }
@@ -63,7 +63,7 @@ public class MethodVisitor extends Java12ParserDefaultVisitor {
         Token last = node.jjtGetLastToken(); // Arguments end at the closing parenthesis
 
         String expression = getFullText(first, last);
-        storage.add(new AnalysisTool.InvocationRecord(clean(expression), fileName, first.beginLine, first.beginColumn));
+        storage.add(new InvocationRecord(clean(expression), fileName, first.beginLine, first.beginColumn));
 
         return super.visit(node, data);
     }
@@ -74,7 +74,7 @@ public class MethodVisitor extends Java12ParserDefaultVisitor {
         Token last = node.jjtGetLastToken();
 
         String expression = getFullText(first, last);
-        storage.add(new AnalysisTool.InvocationRecord(clean(expression), fileName, first.beginLine, first.beginColumn));
+        storage.add(new InvocationRecord(clean(expression), fileName, first.beginLine, first.beginColumn));
 
         return super.visit(node, data);
     }
