@@ -1,8 +1,12 @@
 package Test;
 
+/*
+Test Case: Conditional Ambiguity.
+Purpose: Verifies the resolution of the Dangling Else problem.
+ */
 public class DanglingElse {
 
-    // 1. Define the boolean flags so the 'if' statements are valid
+
     boolean isTrue = true;
     boolean isAlsoTrue = false;
 
@@ -16,7 +20,7 @@ public class DanglingElse {
                 doSomethingElse();
     }
 
-    // 2. Define dummy methods so the compiler doesn't complain
+
     void doSomething() {
         // No-op
     }
