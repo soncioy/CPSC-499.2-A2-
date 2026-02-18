@@ -218,19 +218,19 @@ public class AnalysisTool {
             Java12Parser.resetInvocations();
             Java12Parser.setFileName(new java.io.File(path).getName());
 
-            // FIX: Append newline to prevent EOF crashes in JavaCC single-line comments
             byte[] encoded = java.nio.file.Files.readAllBytes(Paths.get(path));
             String content = new String(encoded) + "\n";
             java.io.InputStream fis = new java.io.ByteArrayInputStream(content.getBytes());
 
-            Java12Parser parser = new Java12Parser(fis);
+            // FIX IS HERE: Wrap 'fis' in an InputStreamReader
+            Java12Parser parser = new Java12Parser(new java.io.InputStreamReader(fis));
+
             Node root = parser.CompilationUnit();
 
             MethodVisitor visitor = new MethodVisitor(path, records);
             root.jjtAccept(visitor, null);
 
         } catch (Throwable e) {
-            // Uncomment to debug crashes
             // System.err.println("!!! JAVACC CRASH on " + path + ": " + e.getMessage());
         }
         return records;

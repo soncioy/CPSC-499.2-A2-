@@ -5,7 +5,7 @@ import ca.ucalgary.cpsc49902.javacc.Node;
 import ca.ucalgary.cpsc49902.javacc.SimpleNode;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.InputStreamReader; // Import this
 
 public class TreeGenerator {
     public static void main(String[] args) throws Exception {
@@ -15,7 +15,8 @@ public class TreeGenerator {
         }
 
         try(FileInputStream inputStream = new FileInputStream(args[0])){
-            Java12Parser parser = new Java12Parser((inputStream));
+            // FIX IS HERE: Use InputStreamReader
+            Java12Parser parser = new Java12Parser(new InputStreamReader(inputStream));
             Node root = parser.CompilationUnit();
             TreeGeneratorHelper.dump(root, "");
         }
