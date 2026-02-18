@@ -15,11 +15,36 @@ import java.util.List;
 
 public class AnalysisTool {
 
-    // =========================================================================
-    // INNER CLASSES (Data Structures)
-    // =========================================================================
 
-    @SuppressWarnings("ClassCanBeRecord")
+    public static void main(String[] args) {
+        if (args.length == 0) {
+            System.out.println("Usage: java ca.ucalgary.cpsc49902.AnalysisTool <file_path>...");
+            return;
+        }
+
+        List<InvocationRecord> allResults = new ArrayList<>();
+
+        // 1. Loop through all input files
+        for (String filePath : args) {
+            try {
+                // RUNNING JAVACC (You can switch to analyze(filePath) for ANTLR if preferred)
+                List<InvocationRecord> fileResults = runJavaCCAnalysis(filePath);
+                allResults.addAll(fileResults);
+            } catch (Exception e) {
+                System.err.println("Error parsing " + filePath + ": " + e.getMessage());
+            }
+        }
+
+        // 2. REQUIRED HEADER
+        System.out.println(allResults.size() + " method/constructor invocation(s) found in the input file(s)");
+
+        // 3. REQUIRED LIST
+        for (InvocationRecord r : allResults) {
+            System.out.println(r.toString());
+        }
+    }
+
+    // --- DATA CLASS ---
     public static class InvocationRecord {
         private final String expression;
         private final String fileName;
@@ -28,24 +53,19 @@ public class AnalysisTool {
 
         public InvocationRecord(String expression, String fileName, int line, int column) {
             this.expression = expression;
-            this.fileName   = fileName;
-            this.line       = line;
-            this.column     = column;
+            this.fileName = fileName;
+            this.line = line;
+            this.column = column;
         }
 
-        public String getExpression() { return expression; }
-        public String getFileName()   { return fileName; }
-        public int getLine()          { return line; }
-        public int getColumn()        { return column; }
-
+        // Formats exactly as required: <expression>: file <id>, line <#>, column <#>
         @Override
         public String toString() {
-            return expression + ": file " + fileName +
-                    ", line " + line +
-                    ", column " + column;
+            return expression + ": file " + fileName + ", line " + line + ", column " + column;
         }
     }
 
+    // --- ERROR CLASS ---
     public static class SyntaxError {
         private final int line;
         private final int column;
@@ -56,23 +76,10 @@ public class AnalysisTool {
             this.column = column;
             this.message = message;
         }
-
-        public int getLine() { return line; }
-        public int getColumn() { return column; }
-        public String getMessage() { return message; }
-
-        @Override
-        public String toString() {
-            return "line " + line + ", column " + column + ": " + message;
-        }
     }
 
-    // =========================================================================
-    // ANTLR LOGIC (The Listener)
-    // =========================================================================
-
+    // --- ANTLR LISTENER (Used by analyze()) ---
     public static class InvocationListener extends JavaParserBaseListener {
-
         private final String fileName;
         private final List<InvocationRecord> records = new ArrayList<>();
 
@@ -85,12 +92,7 @@ public class AnalysisTool {
         }
 
         private void add(String expression, Token location) {
-            records.add(new InvocationRecord(
-                    expression,
-                    fileName,
-                    location.getLine(),
-                    location.getCharPositionInLine() + 1
-            ));
+            records.add(new InvocationRecord(expression, fileName, location.getLine(), location.getCharPositionInLine() + 1));
         }
 
         @Override
@@ -100,7 +102,8 @@ public class AnalysisTool {
                 String prefix = prefixUpTo(ctx, i);
 
                 if (s.methodCall() != null) {
-                    add(prefix + sourceText(s), s.methodCall().PERIOD().getSymbol());
+                    Token startToken = s.methodCall().PERIOD() != null ? s.methodCall().PERIOD().getSymbol() : ctx.getStart();
+                    add(prefix + sourceText(s), startToken);
                 } else if (s.unqualifiedCall() != null) {
                     add(prefix + sourceText(s), ctx.primaryPrefix().getStart());
                 } else if (s.superMethodCall() != null) {
@@ -124,6 +127,7 @@ public class AnalysisTool {
             add(text, ctx.getStart());
         }
 
+        // --- ANTLR Helpers ---
         private static String sourceText(ParserRuleContext ctx) {
             Interval interval = new Interval(ctx.getStart().getStartIndex(), ctx.getStop().getStopIndex());
             return ctx.getStart().getInputStream().getText(interval);
@@ -151,9 +155,7 @@ public class AnalysisTool {
         }
     }
 
-    // =========================================================================
-    // HELPER METHODS
-    // =========================================================================
+    // --- UTILITIES ---
 
     private static Path resolvePath(String filePath) {
         Path p = Paths.get(filePath);
@@ -165,11 +167,11 @@ public class AnalysisTool {
         lexer.removeErrorListeners();
         JavaParser parser = new JavaParser(new CommonTokenStream(lexer));
         parser.removeErrorListeners();
-        if (errorListener != null) {
-            parser.addErrorListener(errorListener);
-        }
+        if (errorListener != null) parser.addErrorListener(errorListener);
         return parser.compilationUnit();
     }
+
+    // --- PUBLIC API ---
 
     public static List<SyntaxError> getSyntaxErrors(String filePath) throws IOException {
         List<SyntaxError> errors = new ArrayList<>();
@@ -182,24 +184,6 @@ public class AnalysisTool {
         return errors;
     }
 
-    public static int countErrors(String filePath) throws IOException {
-        return getSyntaxErrors(filePath).size();
-    }
-
-    public static String formatOutput(List<InvocationRecord> records) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(records.size()).append(" method/constructor invocation(s) found in the input file(s)");
-        for (InvocationRecord r : records) {
-            sb.append("\n").append(r);
-        }
-        return sb.toString();
-    }
-
-    // =========================================================================
-    // ANALYSIS METHODS (ANTLR & JAVACC)
-    // =========================================================================
-
-    // 1. ANTLR Analysis
     public static List<InvocationRecord> analyze(String filePath) throws IOException {
         JavaParser.CompilationUnitContext tree = buildTree(filePath, null);
         InvocationListener listener = new InvocationListener(resolvePath(filePath).getFileName().toString());
@@ -207,17 +191,12 @@ public class AnalysisTool {
         return listener.getRecords();
     }
 
-    // Wrapper for TestHarness if it calls runAnalysis
-    public static List<InvocationRecord> runAnalysis(String filePath) throws IOException {
-        return analyze(filePath);
-    }
-
-    // 2. JavaCC Analysis
     public static List<InvocationRecord> runJavaCCAnalysis(String path) {
         List<InvocationRecord> records = new ArrayList<>();
-        try (FileInputStream fis = new FileInputStream(path)) {
-            // Using direct FileInputStream ensures encoding is handled same as TreeGenerator
-            Java12Parser parser = new Java12Parser(new java.io.InputStreamReader(fis));
+        try (java.io.FileInputStream fis = new java.io.FileInputStream(path);
+             java.io.InputStreamReader reader = new java.io.InputStreamReader(fis, java.nio.charset.StandardCharsets.UTF_8)) {
+
+            Java12Parser parser = new Java12Parser(reader);
             Node root = parser.CompilationUnit();
 
             MethodVisitor visitor = new MethodVisitor(new java.io.File(path).getName(), records);
@@ -226,45 +205,8 @@ public class AnalysisTool {
         } catch (ca.ucalgary.cpsc49902.javacc.ParseException | ca.ucalgary.cpsc49902.javacc.TokenMgrException e) {
             throw new RuntimeException("SYNTAX_ERROR", e);
         } catch (Throwable e) {
-            // e.printStackTrace();
+            // Silently ignore other IO errors or let main handle them
         }
         return records;
-    }
-
-    // =========================================================================
-    // MAIN METHOD
-    // =========================================================================
-
-    public static void main(String[] args) throws IOException {
-        if (args.length == 0) {
-            System.err.println("Usage: java AnalysisTool <file1.java> [file2.java ...]");
-            return;
-        }
-
-        for (String path : args) {
-            System.out.println("==================================================");
-            System.out.println("ANALYZING: " + path);
-            System.out.println("==================================================");
-
-            // 1. CHECK SYNTAX (Using ANTLR's robust checker)
-            List<SyntaxError> errors = getSyntaxErrors(path);
-            if (!errors.isEmpty()) {
-                System.err.println("Syntax errors in " + path + ":");
-                errors.forEach(e -> System.err.println("  " + e));
-                // We typically stop here if syntax is invalid, but for comparison we proceed
-            }
-
-            // 2. RUN ANTLR
-            System.out.println("\n--- [ANTLR Output] ---");
-            List<InvocationRecord> antlrResults = analyze(path);
-            System.out.println(formatOutput(antlrResults));
-
-            // 3. RUN JAVACC
-            System.out.println("\n--- [JavaCC Output] ---");
-            List<InvocationRecord> javaccResults = runJavaCCAnalysis(path);
-            System.out.println(formatOutput(javaccResults));
-
-            System.out.println();
-        }
     }
 }
