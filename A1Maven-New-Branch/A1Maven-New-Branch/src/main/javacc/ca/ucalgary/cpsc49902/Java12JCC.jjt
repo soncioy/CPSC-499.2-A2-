@@ -564,20 +564,67 @@ void BracketsOpt() : {}
 
 void Statement() : {}
 {
+  // 1. Labeled Statement (Must be first)
+  LOOKAHEAD( <IDENTIFIER> <COLON> )
+  LabeledStatement()
+|
+  // 2. Block
   Block()
-| <IF> ParExpression() Statement() [ LOOKAHEAD(1) <ELSE> Statement() ]
-| <FOR> <LPAREN> [ ForInit() ] <SEMICOLON> [ Expression() ] <SEMICOLON> [ ForUpdate() ] <RPAREN> Statement()
-| <WHILE> ParExpression() Statement()
-| <DO> Statement() <WHILE> ParExpression() <SEMICOLON>
-| <TRY> Block() ( ( CatchClause() )+ [ <FINALLY> Block() ] | <FINALLY> Block() )
-| <SWITCH> ParExpression() <LBRACE> ( SwitchBlockStatementGroup() )* <RBRACE>
-| <SYNCHRONIZED> ParExpression() Block()
-| <RETURN> [ Expression() ] <SEMICOLON>
-| <THROW> Expression() <SEMICOLON>
-| <BREAK> [ <IDENTIFIER> ] <SEMICOLON>
-| <CONTINUE> [ <IDENTIFIER> ] <SEMICOLON>
-| <SEMICOLON>
-| StatementExpression() <SEMICOLON>
+|
+  // 3. If Statement
+  <IF> ParExpression() Statement() [ LOOKAHEAD(1) <ELSE> Statement() ]
+|
+  // 4. FIXED FOR LOOP (Handles the semicolon ambiguity)
+  <FOR> <LPAREN>
+  (
+      // Case A: "for (int i=0;" -> LocalVariableDeclarationStatement consumes the ';'
+      LOOKAHEAD( [ <FINAL> ] Type() <IDENTIFIER> )
+      LocalVariableDeclarationStatement()
+    |
+      // Case B: "for (i=0;" or "for (;" -> We must explicitly consume the ';'
+      [ StatementExpressionList() ] <SEMICOLON>
+  )
+  [ Expression() ] <SEMICOLON>
+  [ ForUpdate() ] <RPAREN>
+  Statement()
+|
+  // 5. While Statement
+  <WHILE> ParExpression() Statement()
+|
+  // 6. Do-While
+  <DO> Statement() <WHILE> ParExpression() <SEMICOLON>
+|
+  // 7. Try-Catch-Finally
+  <TRY> Block() ( ( CatchClause() )+ [ <FINALLY> Block() ] | <FINALLY> Block() )
+|
+  // 8. Switch
+  <SWITCH> ParExpression() <LBRACE> ( SwitchBlockStatementGroup() )* <RBRACE>
+|
+  // 9. Synchronized
+  <SYNCHRONIZED> ParExpression() Block()
+|
+  // 10. Return
+  <RETURN> [ Expression() ] <SEMICOLON>
+|
+  // 11. Throw
+  <THROW> Expression() <SEMICOLON>
+|
+  // 12. Break
+  <BREAK> [ <IDENTIFIER> ] <SEMICOLON>
+|
+  // 13. Continue
+  <CONTINUE> [ <IDENTIFIER> ] <SEMICOLON>
+|
+  // 14. Empty Statement
+  <SEMICOLON>
+|
+  // 15. Expression Statement (Assignment, method call, etc.)
+  StatementExpression() <SEMICOLON>
+}
+
+void LabeledStatement() : {}
+{
+  <IDENTIFIER> <COLON> Statement()
 }
 
 void Block() : {}
@@ -587,19 +634,15 @@ void Block() : {}
 
 void BlockStatement() : {}
 {
-  // 1. Check for Label FIRST (e.g., "label:") to prevent Type() from eating the identifier
-  LOOKAHEAD( <IDENTIFIER> <COLON> )
-  Statement()
-|
-  // 2. Check for Local Variable Declaration (e.g., "int x;")
-  LOOKAHEAD( [ <FINAL> ] Type() <IDENTIFIER> )
+  // Check for Local Variable FIRST (Type id...)
+  LOOKAHEAD([ <FINAL> ] Type() <IDENTIFIER>)
   LocalVariableDeclarationStatement()
 |
-  // 3. Check for Inner Class
-  LOOKAHEAD( ModifiersOpt() ( <CLASS> | <INTERFACE> ) )
+  // Check for Inner Class (class Name...)
+  LOOKAHEAD(ModifiersOpt() ( <CLASS> | <INTERFACE> ))
   ClassOrInterfaceDeclaration()
 |
-  // 4. Standard Statement
+  // Fall back to LabeledStatement or standard Statement
   Statement()
 }
 
