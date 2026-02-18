@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AnalysisToo {
+public class AnalysisTool {
 
     // =========================================================================
     // INNER CLASSES (Data Structures)
@@ -230,7 +230,7 @@ public class AnalysisToo {
             // The Dynamic Test harness will catch this and mark it as "SYNTAX_ERROR".
             throw new RuntimeException("SYNTAX_ERROR", e);
         } catch (Throwable e) {
-            // ignore other errors
+            // In visit(ASTArguments)
         }
         return records;
     }
@@ -241,7 +241,7 @@ public class AnalysisToo {
 
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
-            System.err.println("Usage: java AnalysisToo <file1.java> [file2.java ...]");
+            System.err.println("Usage: java AnalysisTool <file1.java> [file2.java ...]");
             return;
         }
 

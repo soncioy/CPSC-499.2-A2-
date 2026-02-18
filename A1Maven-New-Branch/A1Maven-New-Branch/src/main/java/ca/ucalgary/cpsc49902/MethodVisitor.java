@@ -1,6 +1,6 @@
 package ca.ucalgary.cpsc49902;
 
-import ca.ucalgary.cpsc49902.AnalysisToo.InvocationRecord;
+import ca.ucalgary.cpsc49902.AnalysisTool.InvocationRecord;
 import ca.ucalgary.cpsc49902.javacc.*;
 import java.util.List;
 
@@ -15,14 +15,10 @@ public class MethodVisitor extends Java12ParserDefaultVisitor {
 
     private String clean(String s) {
         if (s == null) return "";
-        // Remove comments
         s = s.replaceAll("//.*", "").replaceAll("/\\*.*?\\*/", "");
-        // Remove trailing semicolon
         if (s.endsWith(";")) s = s.substring(0, s.length() - 1);
-        // Remove class bodies { ... }
         int braceIndex = s.indexOf("{");
         if (braceIndex != -1) s = s.substring(0, braceIndex);
-        // Remove whitespace
         return s.replaceAll("\\s", "");
     }
 
@@ -42,29 +38,30 @@ public class MethodVisitor extends Java12ParserDefaultVisitor {
     public Object visit(ASTArguments node, Object data) {
         SimpleNode parent = (SimpleNode) node.jjtGetParent();
 
-        // Climb up to find the PrimaryExpression root (e.g., "System.out.println")
         while (parent != null && !parent.toString().contains("PrimaryExpression")) {
             parent = (SimpleNode) parent.jjtGetParent();
         }
 
         if (parent != null) {
-            // Safety: Skip arguments inside 'new' calls (handled by AllocationExpression)
+            // Safety: Skip 'new' expressions
             Node grandParent = parent.jjtGetParent();
             if (grandParent instanceof ASTAllocationExpression || grandParent instanceof ASTCreator) {
                 return super.visit(node, data);
             }
-            // Skip if the expression starts with 'new'
-            if (parent.jjtGetFirstToken().image.equals("new")) {
+
+            // NULL CHECK FIX: This prevents SYNTAX_ERROR on ValidAssertIdentifier
+            Token firstTok = parent.jjtGetFirstToken();
+            if (firstTok != null && "new".equals(firstTok.image)) {
                 return super.visit(node, data);
             }
 
             Token first = parent.jjtGetFirstToken();
             Token last = node.jjtGetLastToken();
-
             String expression = getFullText(first, last);
+
             if (expression.contains("(")) {
                 storage.add(new InvocationRecord(clean(expression), fileName, first.beginLine, first.beginColumn));
-                return null; // Stop recursion
+                // Do NOT return null; continue to find nested calls
             }
         }
         return super.visit(node, data);
@@ -73,8 +70,7 @@ public class MethodVisitor extends Java12ParserDefaultVisitor {
     @Override
     public Object visit(ASTAllocationExpression node, Object data) {
         Token first = node.jjtGetFirstToken();
-        Token last = node.jjtGetLastToken(); // Arguments ')' token
-
+        Token last = node.jjtGetLastToken();
         String expression = getFullText(first, last);
         storage.add(new InvocationRecord(clean(expression), fileName, first.beginLine, first.beginColumn));
         return null;
