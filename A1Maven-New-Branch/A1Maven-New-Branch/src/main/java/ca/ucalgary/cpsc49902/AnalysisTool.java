@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -214,11 +215,8 @@ public class AnalysisTool {
     // 2. JavaCC Analysis
     public static List<InvocationRecord> runJavaCCAnalysis(String path) {
         List<InvocationRecord> records = new ArrayList<>();
-        try {
-            byte[] encoded = java.nio.file.Files.readAllBytes(Paths.get(path));
-            String content = new String(encoded) + "\n";
-            java.io.InputStream fis = new java.io.ByteArrayInputStream(content.getBytes());
-
+        try (FileInputStream fis = new FileInputStream(path)) {
+            // Using direct FileInputStream ensures encoding is handled same as TreeGenerator
             Java12Parser parser = new Java12Parser(new java.io.InputStreamReader(fis));
             Node root = parser.CompilationUnit();
 
@@ -226,11 +224,9 @@ public class AnalysisTool {
             root.jjtAccept(visitor, null);
 
         } catch (ca.ucalgary.cpsc49902.javacc.ParseException | ca.ucalgary.cpsc49902.javacc.TokenMgrException e) {
-            // THROW this. The Static Tests check 'assertTrue(javaccThrew)'.
-            // The Dynamic Test harness will catch this and mark it as "SYNTAX_ERROR".
             throw new RuntimeException("SYNTAX_ERROR", e);
         } catch (Throwable e) {
-            // In visit(ASTArguments)
+            // e.printStackTrace();
         }
         return records;
     }

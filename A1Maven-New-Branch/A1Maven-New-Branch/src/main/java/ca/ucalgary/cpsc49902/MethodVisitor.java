@@ -38,30 +38,29 @@ public class MethodVisitor extends Java12ParserDefaultVisitor {
     public Object visit(ASTArguments node, Object data) {
         SimpleNode parent = (SimpleNode) node.jjtGetParent();
 
-        while (parent != null && !parent.toString().contains("PrimaryExpression")) {
-            parent = (SimpleNode) parent.jjtGetParent();
+        // Strategy: Climb up to find the root PrimaryExpression
+        SimpleNode primaryExpr = parent;
+        while (primaryExpr != null && !(primaryExpr instanceof ASTPrimaryExpression)) {
+            primaryExpr = (SimpleNode) primaryExpr.jjtGetParent();
         }
 
-        if (parent != null) {
-            // Safety: Skip 'new' expressions
-            Node grandParent = parent.jjtGetParent();
-            if (grandParent instanceof ASTAllocationExpression || grandParent instanceof ASTCreator) {
+        if (primaryExpr != null) {
+            Token firstTok = primaryExpr.jjtGetFirstToken();
+
+            // NULL CHECK: Crucial to stop crashing on complex identifiers
+            if (firstTok == null) return super.visit(node, data);
+
+            // Skip standalone 'new' calls handled by AllocationExpression
+            if ("new".equals(firstTok.image) && primaryExpr.jjtGetNumChildren() <= 2) {
                 return super.visit(node, data);
             }
 
-            // NULL CHECK FIX: This prevents SYNTAX_ERROR on ValidAssertIdentifier
-            Token firstTok = parent.jjtGetFirstToken();
-            if (firstTok != null && "new".equals(firstTok.image)) {
-                return super.visit(node, data);
-            }
-
-            Token first = parent.jjtGetFirstToken();
-            Token last = node.jjtGetLastToken();
-            String expression = getFullText(first, last);
+            // Grab the full text from the start of the expression to the end of these arguments
+            String expression = getFullText(firstTok, node.jjtGetLastToken());
 
             if (expression.contains("(")) {
-                storage.add(new InvocationRecord(clean(expression), fileName, first.beginLine, first.beginColumn));
-                // Do NOT return null; continue to find nested calls
+                storage.add(new InvocationRecord(clean(expression), fileName, firstTok.beginLine, firstTok.beginColumn));
+                return super.visit(node, data); // Recurse for nested calls
             }
         }
         return super.visit(node, data);
@@ -69,13 +68,20 @@ public class MethodVisitor extends Java12ParserDefaultVisitor {
 
     @Override
     public Object visit(ASTAllocationExpression node, Object data) {
+        // Prevent double counting if this allocation is part of a qualified call
+        // e.g., 'outer.new Inner()'
+        if (node.jjtGetParent() instanceof ASTPrimarySuffix) {
+            return super.visit(node, data);
+        }
+
         Token first = node.jjtGetFirstToken();
         Token last = node.jjtGetLastToken();
-        String expression = getFullText(first, last);
-        storage.add(new InvocationRecord(clean(expression), fileName, first.beginLine, first.beginColumn));
+        if (first != null && last != null) {
+            String expression = getFullText(first, last);
+            storage.add(new InvocationRecord(clean(expression), fileName, first.beginLine, first.beginColumn));
+        }
         return null;
     }
-
     @Override
     public Object visit(ASTExplicitConstructorInvocation node, Object data) {
         Token first = node.jjtGetFirstToken();
